@@ -21,7 +21,7 @@ favicon: /public/upload/gavatar/gavatar.png
 
 # disqus 设置
 disqus:
-  shortname: suyan-zh
+  shortname: yiner
 
 # 主题设置，自动激活某个标签
 active: 技术
