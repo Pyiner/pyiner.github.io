@@ -24,7 +24,7 @@ disqus:
   shortname: yiner
 
 # 主题设置，自动激活某个标签
-active: 技术
+active: python
 
 # 首页除了最新文章外显示分类
 #cates:
