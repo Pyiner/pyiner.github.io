@@ -2,7 +2,7 @@
 layout: post
 category: Python之外
 tags: Nodejs
-title: node-webkit开发初探 
+title: node-webkit开发初探
 ---
 node-webkit是一个基于Chromium 和 node.js的应用。
 基于node-webkit 我们可以使用HTML Javascript 甚至是Nodejs来开发桌面应用。
