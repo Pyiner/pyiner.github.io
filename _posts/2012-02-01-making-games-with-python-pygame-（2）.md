@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Makeing Game with Python & Pygame（2）
 ---
 # Surface对象和程序的窗口 #

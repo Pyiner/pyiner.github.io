@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Makeing Game with Python & Pygame（3）
 ---
 	import pygame, sys

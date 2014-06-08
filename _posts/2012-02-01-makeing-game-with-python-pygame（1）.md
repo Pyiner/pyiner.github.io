@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: post
 title: Makeing Game with Python & Pygame（1）
 ---
 # 一个简单的Pygame程序 #
