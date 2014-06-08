@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Python库
 title: 使用xlrd模块 读取excel文件
 ---
 首先导入模块

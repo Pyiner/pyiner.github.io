@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: 环境配置
+tags: nginx
 title: CentOS 6.3 Nginx 搭建 Redmine
 ---
 安装 Redmine 2.0.3

@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Django
 title: Django Admin actions
 ---
 使用一个函数对选中的条路做统一的改变。

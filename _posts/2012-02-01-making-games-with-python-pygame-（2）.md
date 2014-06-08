@@ -1,5 +1,7 @@
 ---
 layout: post
+category: Python
+tags: PyGame
 title: Makeing Game with Python & Pygame（2）
 ---
 # Surface对象和程序的窗口 #

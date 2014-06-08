@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Python库
 title: python标准库学习笔记 urllib模块
 ---
 利用缓存实现简单的获取

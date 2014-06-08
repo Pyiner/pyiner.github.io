@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: 爬虫
 title: Python爬虫之EMS包裹最新状态查询
 ---
 最近在学用Python用爬虫 正好这两天在等新买的小米 所以就试着写个抓取EMS最新状态的脚本

@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Python技巧
 title: Python Property
 ---
 Python有个非常好的概念叫做属性(`property`), 它让面向对象编程变得更加简单. 想详细说Python的属性之前，我们先看看为什么它是那么重要。

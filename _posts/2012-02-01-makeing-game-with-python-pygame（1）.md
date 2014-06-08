@@ -1,5 +1,7 @@
 ---
 layout: post
+category: Python
+tags: PyGame
 title: Makeing Game with Python & Pygame（1）
 ---
 # 一个简单的Pygame程序 #

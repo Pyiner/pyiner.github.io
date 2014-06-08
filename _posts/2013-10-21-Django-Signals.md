@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python之外
+tags: Nodejs
 title: Django Signals
 ---
 Django的信号机制.

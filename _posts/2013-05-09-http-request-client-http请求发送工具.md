@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: wxPython
 title: Http Request Client —— Http请求发送工具
 ---
 好久没更新博客了，上次还是上学期的时候，后来又要期末考试了，也没学什么新的东西，所以就没写啥。

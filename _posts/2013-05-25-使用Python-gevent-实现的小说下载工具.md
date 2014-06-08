@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: 爬虫
 title: 使用Python+ gevent 实现的小说下载工具
 ---
 看小说的时候经常想找一些txt下到手机上看 但是找txt还是比较麻烦 有些网站需要登录才能下载

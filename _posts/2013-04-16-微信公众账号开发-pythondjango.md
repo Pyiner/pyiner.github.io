@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Django
 title: 微信公众账号开发实录——python+django
 ---
 **最近微信很火啊~** 我也凑了个热闹 去弄了个公众账号 花了几个小时的时间让微信和百度开发者平台连通了 。

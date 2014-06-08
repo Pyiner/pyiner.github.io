@@ -1,5 +1,7 @@
 ---
 layout: post
+category: Python
+tags: Python技巧
 title: Python 的闭包
 ---
 

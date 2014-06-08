@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: PyGame
 title: Making Games with Python & Pygame （5）
 ---
 # 字体 #
@@ -66,4 +68,4 @@ title: Making Games with Python & Pygame （5）
 	# ...some more of your code goes here...
 	pygame.mixer.music.stop()
 
-**pygame.mixer.music.play(-1, 0.0)**函数的第一个参数表示背景音乐的循环次数 -1表示无限循环 第二个参数表示音乐开始的时间(s)
+**pygame.mixer.music.play(-1, 0.0)**函数的第一个参数表示背景音乐的循环次数 -1表示无限循环 第二个参数表示音乐开始的时间(s)v

@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: PyGame
 title: Making Games with Python & Pygame （4）
 ---
 所谓的动画简单来说就是根据时间的推移画面进行变化的效果

@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Django
 title: 在BAE上用Django开发博客——视图
 ---
 # 首页的view #

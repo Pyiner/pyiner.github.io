@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python
+tags: Django
 title: 在BAE上用Django开发博客——定义数据库
 ---
 之前博客用的WordPress，早就想自己写一个了，一直没开始写，最近这几天把博客写完了，用的Django，放到了BAE上。
