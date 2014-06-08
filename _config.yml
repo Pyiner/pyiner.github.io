@@ -17,7 +17,7 @@ rss_url: /pages/atom.xml
 
 # gavatar头像及Favicon
 gavatar: /public/upload/gavatar/gavatar.png
-favicon: /public/upload/gavatar/favicon.ico
+favicon: /public/upload/gavatar/gavatar.png
 
 # disqus 设置
 disqus:
