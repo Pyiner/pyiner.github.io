@@ -1,10 +1,11 @@
 ---
 layout: post
-category: Python之外
-tags: Nodejs
+category: Python
+tags: Django
 title: Django Signals
 ---
-Django的信号机制.
+
+#Django的信号机制
 
 使用这个我们可以做很多事情,下面说说使用Signal在model save的时候做别的事情.
 

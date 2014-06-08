@@ -1,5 +1,7 @@
 ---
-layout: default
+layout: post
+category: Python之外
+tags: Nodejs
 title: node-webkit开发初探 
 ---
 node-webkit是一个基于Chromium 和 node.js的应用。
@@ -14,7 +16,7 @@ node-webkit是一个基于Chromium 和 node.js的应用。
 项目的整体结构：
 	
 	├── node_modules
-	│   └── iconv-lite
+	│   └── iconv-lite
 	├── index.html
 	└── package.json
 
