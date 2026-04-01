@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AutoResearch 对抗式收敛 Demo</title>
+    <title>AutoResearch MCP Verdict Demo</title>
     <meta
       name="description"
-      content="展示 AutoResearch 如何在五轮对抗式循环里，让一个开放性任务持续逼近更优答案。"
+      content="展示 AutoResearch 在修复 verifier MCP verdict 链路后，如何用一次真实五轮运行持续逼近更优答案。"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -810,62 +810,108 @@
     <main class="page">
       <div class="topline">
         <span><i class="dot"></i> AutoResearch Demo Archive</span>
-        <span>GaryBot / 命题 / 五轮输出 / 验证反馈</span>
+        <span>GaryBot / MCP Verdict / 五轮中文卡片 / 实验结论</span>
       </div>
 
       <section class="hero">
-        <div class="eyebrow">AutoResearch · Adversarial Convergence</div>
-        <h1>把一次真实五轮运行，完整摊开给你看。</h1>
+        <div class="eyebrow">AutoResearch · MCP Verdict Rerun</div>
+        <h1>把一次修复后的真实五轮运行，完整摊开给你看。</h1>
         <p>
-          这页不是概念介绍，而是一份可逐屏讲解的 demo 档案。
-          你可以直接看到命题是什么、每一轮究竟输出了什么、Verifier
-          又是如何一轮轮把问题压缩到一个稳定残余缺陷上的。
+          这页展示的不是概念稿，而是修复 verifier MCP verdict 链路之后的一次真实重跑。
+          你能同时看到命题、每轮 6 行候选、每轮 Verifier 反馈、分数怎么上涨，
+          以及 gateway 在遇到一次坏掉的工具参数后，如何让同一轮自动重试并继续跑完整个闭环。
         </p>
 
         <div class="hero-grid">
           <div class="stat-strip">
             <div class="stat">
               <strong>5</strong>
-              <span>完整跑满五轮，保留全过程输出与反馈</span>
+              <span>完整跑满五轮，五条候选与五条结构化 verdict 全部保留</span>
             </div>
             <div class="stat">
-              <strong>7.8</strong>
-              <span>最佳得分出现在第 5 轮</span>
+              <strong>8.3</strong>
+              <span>最佳得分出现在第 5 轮，较首轮提升 1.5 分</span>
             </div>
             <div class="stat">
-              <strong>11</strong>
-              <span>评分维度，全部公开写进命题</span>
+              <strong>5/5</strong>
+              <span>五个 verify 线程最终都通过 MCP tool 存下结构化 verdict</span>
             </div>
             <div class="stat">
               <strong>1</strong>
-              <span>最终只剩一个稳定残余缺陷：前置说明</span>
+              <span>第 1 轮出现一次坏掉的字符串化参数，随后同轮自愈重试成功</span>
             </div>
           </div>
 
           <aside class="hero-card">
             <h2>你在这页里会直接看到</h2>
             <ul>
-              <li>完整任务目标与 Definition of Done。</li>
-              <li>每一轮 Worker 的实际候选输出。</li>
-              <li>每一轮 Verifier 的原始错误、打分与建议。</li>
-              <li>为什么这是一个开放性任务上的对抗式收敛过程。</li>
+              <li>修复前后最关键的链路变化。</li>
+              <li>真实中文命题与 Definition of Done。</li>
+              <li>五轮 score 轨迹与每轮 6 行候选卡片。</li>
+              <li>每轮 Verifier 的 strengths、weaknesses、suggestions。</li>
             </ul>
           </aside>
         </div>
 
         <nav class="quick-nav" aria-label="Quick Navigation">
+          <a href="#fix">修复结论</a>
           <a href="#brief">命题与约束</a>
           <a href="#scores">五轮得分轨迹</a>
           <a href="#rounds">逐轮输出与反馈</a>
-          <a href="#takeaway">演示话术落点</a>
+          <a href="#takeaway">实验结论</a>
         </nav>
       </section>
 
       <div class="content">
+        <section class="section" id="fix">
+          <div class="section-header">
+            <h2>修复结论</h2>
+            <span>本次真实 run_id: <code>ar_af30525282fc49ecb5a9541ee7fe0870</code></span>
+          </div>
+
+          <div class="task-grid">
+            <div class="detail-card">
+              <h3>这次修了什么</h3>
+              <ul class="feedback-list">
+                <li><code>auto_research_verdict</code> 已经成为 AutoResearch verifier 的主判定路径，不再依赖自由文本 JSON 作为主流程。</li>
+                <li>active verifier thread authorization 让 tool 调用不再要求自定义 header 每一跳都成功回放。</li>
+                <li>gateway 现在接受合法的 JSON-stringified verdict 数组字段，降低 provider 侧参数漂移造成的直接拒绝率。</li>
+              </ul>
+            </div>
+
+            <div class="detail-card">
+              <h3>这次真实验证到了什么</h3>
+              <ul class="feedback-list">
+                <li>五个 verify 线程全部通过 MCP tool 存下了结构化 verdict，整个 run 完整跑满 5 轮。</li>
+                <li>第 1 轮仍然出现了一次坏掉的字符串化 <code>dimension_scores</code>，但同一 verify 线程随即用正确数组重试成功，主循环没有中断。</li>
+                <li>后续第 2 到第 5 轮都是一次成功提交，最终 best score 从 <code>6.8</code> 持续提升到 <code>8.3</code>。</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="task-grid" style="margin-top: 18px;">
+            <div class="pullquote">
+              <strong>一句话结论</strong>
+              <p>
+                这次修复把 AutoResearch 的 verifier 主路径从“可能被自由文本 JSON 绊倒”收成了“以 MCP tool 为主、授权可兜底、参数漂移可容忍、同轮还能自愈重试”的状态。
+              </p>
+            </div>
+
+            <div class="detail-card">
+              <h3>仍然值得继续收口的点</h3>
+              <ul class="feedback-list">
+                <li>第 1 轮的第一次 tool call 仍然会偶发坏掉，说明 provider 侧还会产出 malformed stringified array。</li>
+                <li>当前链路已经能自愈，但下一步仍值得继续压低“首跳失败、二跳成功”的发生率。</li>
+                <li>这页的价值就在于，它不是假设修好了，而是把修复后的真实残余问题也一并展示出来。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <section class="section" id="brief">
           <div class="section-header">
             <h2>命题与完整约束</h2>
-            <span>真实 run_id: <code>ar_5802e9a8a81c4b39b144687f702320bb</code></span>
+            <span>状态：<code>completed / budget_exhausted: 5 candidates evaluated, best score 8.3</code></span>
           </div>
 
           <div class="task-grid">
@@ -873,7 +919,7 @@
               <h3>任务目标</h3>
               <div class="pullquote">
                 <strong>Task</strong>
-                <p>基于仓库文档产出一张适合演示的 AutoResearch 中文介绍卡片。</p>
+                <p>基于仓库文档，产出一张适合现场 Demo 的 AutoResearch 中文介绍卡片。</p>
               </div>
             </div>
 
@@ -881,20 +927,20 @@
               <h3>运行元数据</h3>
               <div class="meta-grid">
                 <div class="meta-item">
-                  <strong>状态</strong>
-                  <span>completed / budget_exhausted</span>
+                  <strong>Run ID</strong>
+                  <span><code>ar_af30525282fc49ecb5a9541ee7fe0870</code></span>
+                </div>
+                <div class="meta-item">
+                  <strong>输出类型</strong>
+                  <span><code>demo_card</code></span>
                 </div>
                 <div class="meta-item">
                   <strong>Iteration Budget</strong>
                   <span>5 / 5</span>
                 </div>
                 <div class="meta-item">
-                  <strong>输出类型</strong>
-                  <span>report</span>
-                </div>
-                <div class="meta-item">
                   <strong>边界</strong>
-                  <span>不允许浏览；不允许改文件</span>
+                  <span>不允许 browsing；不允许 file edits</span>
                 </div>
               </div>
             </div>
@@ -904,27 +950,23 @@
             <div class="detail-card">
               <h3>Definition of Done</h3>
               <ol class="prompt-list">
-                <li>只允许输出 6 行，不要任何额外说明。</li>
-                <li>六行前缀必须依次是：标题：、目标：、证据一：、证据二：、证据三：、收尾：。</li>
-                <li>标题行必须同时包含 GaryBot 和 AutoResearch。</li>
-                <li>目标行必须同时包含“五轮”和“持续收敛”。</li>
-                <li>证据一行必须提到 <code>garybot-gateway</code>，并明确它负责 HTTP API 或 MCP。</li>
-                <li>证据二行必须提到 <code>garybot-router</code>，并明确它负责线程或 transcript。</li>
-                <li>证据三行必须提到 <code>desktop/gary-desktop</code>，并明确它负责桌面端或 Mac App。</li>
-                <li>三条证据行都必须各自以不同的来源标记结尾，且只能从 <code>[docs/architecture.md]</code>、<code>[docs/agent/runtime-map.md]</code>、<code>[docs/auto-research.md]</code> 这三个来源里选。</li>
-                <li>收尾行必须同时包含“适合演示”和“更稳”。</li>
-                <li>全文必须是中文说明；除了 GaryBot、AutoResearch、代码标识和来源标记外，不允许额外英文句子、阿拉伯数字或项目符号。</li>
-                <li>语气必须像对外演示文案，不要写成开发说明。</li>
+                <li>只输出 6 行，且前缀顺序固定为：标题：、核心观点：、证据一：、证据二：、证据三：、结尾：。</li>
+                <li>标题必须同时包含 <code>AutoResearch</code> 和“开放性问题”。</li>
+                <li>核心观点必须同时包含“对抗式收敛”、<code>Worker</code>、<code>Verifier</code>，并说明两者如何互相施压。</li>
+                <li>证据一必须引用 <code>[docs/auto-research.md]</code>，说明它是面向用户的 harness 功能，或说明用户提供 Task + Definition。</li>
+                <li>证据二必须引用 <code>[docs/architecture.md]</code>，并明确提到 <code>garybot-gateway</code> 或 <code>garybot-router</code> 在流程中的角色。</li>
+                <li>证据三必须引用 <code>[docs/agent/runtime-map.md]</code>，并明确提到 <code>desktop/gary-desktop</code>，或说明 verifier verdict 通过 MCP tool 提交。</li>
+                <li>结尾必须同时包含“优化型任务”和“越跑越好”，全文必须是中文，不允许额外说明、分隔线或 markdown 列表。</li>
               </ol>
             </div>
 
             <div class="detail-card">
               <h3>为什么这个命题适合 Demo</h3>
               <ul class="feedback-list">
-                <li>它不是只有唯一正确答案的确定性任务，而是一个明显带优化空间的开放题。</li>
-                <li>评分维度全都显式写出来，Verifier 很容易稳定给出结构化反馈。</li>
-                <li>内容质量和格式约束可以同时拉扯，天然适合演示“越来越接近，但还没完全通过”的过程。</li>
-                <li>这次真实运行最后就收敛到同一个剩余问题：正文前总会多出策略说明。</li>
+                <li>它是明显的开放性、优化型任务，不是一眼就有唯一正确答案的封闭题。</li>
+                <li>结构约束很硬，内容空间又足够大，天然适合演示“格式、叙事、卖点”之间的反复拉扯。</li>
+                <li>每轮提升都能被 verifier 讲清楚，所以这不是“润色几次”，而是“每轮都知道为什么变好”。</li>
+                <li>最终没有一轮神奇满分，反而更适合说明 AutoResearch 的真实价值是“持续逼近更优”。</li>
               </ul>
             </div>
           </div>
@@ -933,99 +975,99 @@
         <section class="section" id="scores">
           <div class="section-header">
             <h2>五轮得分轨迹</h2>
-            <span>前两轮 verifier 甚至还没稳定输出结构化 JSON；第 3 轮开始进入可解释收敛</span>
+            <span>真实 scores：<code>6.8 → 7.5 → 7.8 → 8.2 → 8.3</code></span>
           </div>
           <div class="score-board">
             <div class="score-card">
               <h3>第 1 轮</h3>
-              <strong>Parse Error</strong>
-              <span>Verifier 原始错误：<code>expected ',' or '}' at line 1 column 200</code></span>
+              <strong>6.8</strong>
+              <span>闭环讲清楚了，但证据归属和用户视角还不够稳；同轮发生 1 次 tool 重试。</span>
             </div>
             <div class="score-card">
               <h3>第 2 轮</h3>
-              <strong>Parse Error</strong>
-              <span>Verifier 原始错误：<code>expected ',' or '}' at line 1 column 228</code></span>
+              <strong>7.5</strong>
+              <span>来源归属修正，用户视角补上，标题与术语开始朝 demo 口吻靠拢。</span>
             </div>
             <div class="score-card">
               <h3>第 3 轮</h3>
-              <strong>7.5</strong>
-              <span>主体六行几乎全对，首次明确指出唯一硬伤就是前置说明与分隔线。</span>
+              <strong>7.8</strong>
+              <span>“答题人 vs 出题人”的类比让 Worker / Verifier 更好懂，但整体还偏段落式。</span>
             </div>
             <div class="score-card">
               <h3>第 4 轮</h3>
-              <strong>7.7</strong>
-              <span>正文继续变强，但依旧在答案前加入解释，并夹带英文和数字。</span>
+              <strong>8.2</strong>
+              <span>扫描性、卖点压缩和结构表达进一步变好，开始像真正的演示卡片。</span>
             </div>
             <div class="score-card">
               <h3>第 5 轮</h3>
-              <strong>7.8</strong>
-              <span>最佳候选出现，但仍未删干净前置“策略”说明，最终预算耗尽。</span>
+              <strong>8.3</strong>
+              <span>最佳版本出现，但核心观点仍偏长、来源标记仍略显学术化，所以没有满分。</span>
             </div>
           </div>
           <div class="trajectory">
-            <div class="trajectory-step error" style="--pct: 0%;">
+            <div class="trajectory-step" style="--pct: 68%;">
               <div class="trajectory-top">
                 <strong>第 1 轮</strong>
-                <span class="trajectory-value">解析失败</span>
+                <span class="trajectory-value">6.8</span>
               </div>
               <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">答案主体成形，但 verifier 还没稳定给出结构化判决。</div>
-            </div>
-            <div class="trajectory-step error" style="--pct: 0%;">
-              <div class="trajectory-top">
-                <strong>第 2 轮</strong>
-                <span class="trajectory-value">解析失败</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">内容更强，但系统可解释性还没完全建立起来。</div>
+              <div class="trajectory-note">先把“Worker / Verifier / gateway / desktop”这条主线讲出来，但证据二归属和用户体验卖点没立稳。</div>
             </div>
             <div class="trajectory-step" style="--pct: 75%;">
               <div class="trajectory-top">
-                <strong>第 3 轮</strong>
+                <strong>第 2 轮</strong>
                 <span class="trajectory-value">7.5</span>
               </div>
               <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">首次把问题清晰压缩到“前置说明与分隔线”这一单点。</div>
-            </div>
-            <div class="trajectory-step" style="--pct: 77%;">
-              <div class="trajectory-top">
-                <strong>第 4 轮</strong>
-                <span class="trajectory-value">7.7</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">正文继续提升，但坏习惯仍然稳定复现。</div>
+              <div class="trajectory-note">关键来源归属被修正，Task + Definition 的用户视角终于进入卡片主体。</div>
             </div>
             <div class="trajectory-step" style="--pct: 78%;">
               <div class="trajectory-top">
-                <strong>第 5 轮</strong>
+                <strong>第 3 轮</strong>
                 <span class="trajectory-value">7.8</span>
               </div>
               <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">最佳候选出现，系统却仍被同一个残余缺陷拦住。</div>
+              <div class="trajectory-note">标题与类比更有 demo 感，但 verifier 开始反过来要求更轻、更快扫读的结构。</div>
+            </div>
+            <div class="trajectory-step" style="--pct: 82%;">
+              <div class="trajectory-top">
+                <strong>第 4 轮</strong>
+                <span class="trajectory-value">8.2</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">措辞和视觉锚点继续优化，单行卖点更聚焦，但“对弈”一词被指出有零和误导。</div>
+            </div>
+            <div class="trajectory-step" style="--pct: 83%;">
+              <div class="trajectory-top">
+                <strong>第 5 轮</strong>
+                <span class="trajectory-value">8.3</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">最终最优版本出现，提升还在继续，但最后 0.1 分已经很难拿，正好说明“越跑越好”不是线性收益。</div>
             </div>
           </div>
           <div class="focus-strip">
             <div class="focus-card">
               <h3>Verifier 焦点如何变化</h3>
               <ul>
-                <li>第 1 到第 2 轮：连结构化 verdict 都不稳定，重点还是“先把问题说清楚”。</li>
-                <li>第 3 轮：第一次清晰指出，主体六行其实已经大体合格。</li>
-                <li>第 4 到第 5 轮：焦点完全收缩到同一个剩余缺陷，不再分散。</li>
+                <li>第 1 轮先抓事实归属和用户视角。</li>
+                <li>第 2 到第 3 轮开始盯标题、术语密度和口语化表达。</li>
+                <li>第 4 到第 5 轮则主要在抠“demo 友好度”和“最后 0.1 分的表达质量”。</li>
               </ul>
             </div>
             <div class="focus-card">
-              <h3>稳定残余缺陷</h3>
+              <h3>为什么这很适合讲开放题</h3>
               <p>
-                这五轮最有价值的地方，不是分数从零散到 7.8，而是 verifier 持续把失败原因压缩到了同一个点：
-                <strong>答案前的说明块始终没有被真正删除。</strong>
+                这不是一道“答对就结束”的题，而是一次可持续优化的开放题。
+                每一轮都不是简单改字，而是在新的高水位上继续被 Verifier 逼着补剩余短板。
               </p>
             </div>
             <div class="focus-card">
               <h3>现场讲解抓手</h3>
               <ul>
-                <li>先展示它很快就能做出“主体内容”。</li>
-                <li>再展示 verifier 如何把问题逼到一个单点。</li>
-                <li>最后强调：开放题的价值不在一次答对，而在持续逼近更优。</li>
+                <li>先讲工程修复：verdict 从自由文本收成 MCP tool。</li>
+                <li>再讲产品价值：五轮里每次都能看懂它为什么变得更好。</li>
+                <li>最后讲剩余问题：连第 5 轮都还可以更好，这正是开放题的本质。</li>
               </ul>
             </div>
           </div>
@@ -1034,7 +1076,7 @@
         <section class="section" id="rounds">
           <div class="section-header">
             <h2>逐轮输出与 Verifier 反馈</h2>
-            <span>每轮都保留了真实候选输出；第 3 至第 5 轮保留了结构化评价</span>
+            <span>每轮都保留了真实 6 行候选；每轮 verdict 都来自同一条内部 MCP tool 链路</span>
           </div>
 
           <div class="rounds">
@@ -1042,51 +1084,49 @@
               <div class="round-top">
                 <div>
                   <span class="round-badge">Round 1</span>
-                  <h3 class="round-title">先把 6 行主体搭出来</h3>
+                  <h3 class="round-title">先把闭环讲清楚，但证据归属和用户卖点还不稳</h3>
                   <p class="round-subtitle">
-                    第一轮已经生成了完整卡片骨架，但在正文前加了说明文字和分隔线。内容有了，边界没守住。
+                    第一轮已经把“Worker / Verifier / gateway / desktop”整条链路摆出来了。
+                    不过证据二把某些运行时描述归错了源，用户为什么会喜欢这个功能也讲得不够强。
                   </p>
                 </div>
-                <div class="score-pill">Verifier: Parse Error</div>
+                <div class="score-pill">6.8 / 10 · 1 次 tool 重试</div>
               </div>
               <div class="round-layout">
                 <div class="artifact">
                   <strong>Round 1 Output</strong>
-<pre>直接输出符合所有评分维度的六行卡片，不做额外叙述。
-
----
-
-标题：GaryBot AutoResearch——智能自动研究新体验
-目标：以五轮迭代驱动持续收敛，让复杂研究课题自动完成
-证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，是研究任务的统一调度入口 [docs/architecture.md]
-证据二：`garybot-router` 负责线程状态与 transcript 管理，确保每轮推进有据可查 [docs/agent/runtime-map.md]
-证据三：`desktop/gary-desktop` 提供桌面端 Mac App 界面，让研究进展实时可见 [docs/auto-research.md]
-收尾：整体架构经过充分验证，适合演示，随着迭代积累答案质量更稳</pre>
+<pre>标题：AutoResearch——让 AI 自己跑闭环来解决开放性问题
+核心观点：AutoResearch 采用对抗式收敛机制，Worker 负责产出候选结果，Verifier 负责按验收标准打分并列出缺失项，两者在每轮迭代中互相施压——Worker 被迫补齐 Verifier 指出的不足，Verifier 则被迫对 Worker 的新产出重新严格审查，循环直到通过或预算耗尽。
+证据一：[docs/auto-research.md] 明确指出 Auto Research 是 Gary 第一个面向用户的 harness 功能，用户只需给出 Task（要做什么）和 Definition（什么算完成），Gary 便自动启动 Worker-Verifier 闭环迭代。
+证据二：[docs/architecture.md] 显示 garybot-gateway 是整个系统的 HTTP 控制面，负责路由、聊天 API 与自动化调度，AutoResearch 的运行状态创建、迭代管理和停止语义均由 gateway 控制面驱动。
+证据三：[docs/agent/runtime-map.md] 记载 desktop/gary-desktop 是 AutoResearch 控制面的客户端，Verifier 通过内部 auto_research_verdict MCP tool 提交结构化判定结果，确保判定数据机器可读且可追溯。
+结尾：AutoResearch 天然适合优化型任务——每一轮 Verifier 反馈都驱动 Worker 精准修正，结果越跑越好，直到满足验收标准为止。</pre>
                 </div>
                 <div class="feedback-card">
                   <h3>Verifier 反馈</h3>
-                  <p class="summary">
-                    这一轮 verifier 连结构化 verdict 都没稳定产出，直接报了解析错误。
-                    但从候选本身已经能看出第一个系统性问题：它总爱在正式答案前多写一段说明。
-                  </p>
                   <div class="tag-row">
-                    <span class="tag bad">原始错误：expected ',' or '}' at line 1 column 200</span>
-                    <span class="tag warn">内容主体已成形</span>
-                    <span class="tag bad">前置说明已越界</span>
+                    <span class="tag warn">总分：6.8</span>
+                    <span class="tag bad">证据二源归属不准</span>
+                    <span class="tag ok">闭环逻辑已搭起来</span>
                   </div>
+                  <ul class="feedback-list">
+                    <li>强项：六行结构完整，Worker / Verifier 的闭环关系和“优化型任务”的价值都讲出来了。</li>
+                    <li>弱项：证据二把某些运行时描述错归到 <code>architecture.md</code>；用户只填 Task + Definition 这件事还没有被突出成 demo 卖点。</li>
+                    <li>建议：修正来源归属，并明确告诉观众“用户只填两栏，Gary 自己跑闭环”。</li>
+                  </ul>
                   <div class="delta-grid">
                     <div class="delta-card">
-                      <strong>这一轮建立了什么</strong>
-                      <p>六行正文结构已经出现，三条证据和收尾也都开始贴近最终目标。</p>
+                      <strong>工程链路观察</strong>
+                      <p>这一轮先发出了一次坏掉的字符串化 <code>dimension_scores</code>，随后同一 verify 线程重试为标准数组并成功存下 verdict。</p>
                     </div>
                     <div class="delta-card">
-                      <strong>这一轮为什么没过</strong>
-                      <p>它把“解释自己正在做什么”的话，直接写进了最终答案前面。</p>
+                      <strong>为什么适合当起点</strong>
+                      <p>它已经像答案了，但 verifier 还能清楚指出“哪一条证据不准、哪一个卖点不够亮”。</p>
                     </div>
                   </div>
                   <div class="issue-banner">
-                    <strong>本轮越界片段</strong>
-                    <p><span class="issue-mark">直接输出符合所有评分维度的六行卡片，不做额外叙述。</span> 以及 <span class="issue-mark">---</span> 都不该出现在六行正文之前。</p>
+                    <strong>本轮主要缺口</strong>
+                    <p>证据二的归属错误会直接削弱可信度，而“Task + Definition 极简输入”没有前置，会让这张卡片少了 Demo 场景里最能打动人的一层。</p>
                   </div>
                 </div>
               </div>
@@ -1096,51 +1136,45 @@
               <div class="round-top">
                 <div>
                   <span class="round-badge">Round 2</span>
-                  <h3 class="round-title">内容更完整，但还是改不掉“先解释一下”</h3>
+                  <h3 class="round-title">修正来源，补上用户视角，但标题和术语仍偏学术</h3>
                   <p class="round-subtitle">
-                    第二轮把三条证据讲得更像“基于文档的归纳”，整体更像正式介绍卡片，但依然在正文前加了导语和分隔线。
+                    第二轮明显在按反馈修：来源归属被纠正，用户为什么会喜欢它也更清楚了。
+                    但标题和核心观点仍有一点“写给技术人看”的味道。
                   </p>
                 </div>
-                <div class="score-pill">Verifier: Parse Error</div>
+                <div class="score-pill">7.5 / 10</div>
               </div>
               <div class="round-layout">
                 <div class="artifact">
                   <strong>Round 2 Output</strong>
-<pre>从两份文档中提取了关键边界：`garybot-gateway` 负责 HTTP API + MCP 路由层（架构文档明确），`garybot-router` 承载消息台账（内存备注确认），`desktop/gary-desktop` 是桌面端 Mac App 入口。三条证据来源各不相同，严格按评分维度组装。
-
----
-
-标题：GaryBot AutoResearch——首个面向用户的智能自动研究功能
-目标：以五轮迭代推动结果持续收敛，让复杂研究任务自动跑到通过为止
-证据一：`garybot-gateway` 统一承接 HTTP API 与 MCP 请求，是所有研究任务的调度入口 [docs/architecture.md]
-证据二：`garybot-router` 负责线程台账与对话历史的持久化存储和路由分发 [docs/agent/runtime-map.md]
-证据三：`desktop/gary-desktop` 作为桌面端 Mac App，提供任务创建、迭代进度与最终结果的完整视图 [docs/auto-research.md]
-收尾：当前架构已通过内部验证，适合演示，随迭代覆盖面扩大后将更稳</pre>
+<pre>标题：AutoResearch——用有限迭代收敛开放性问题
+核心观点：AutoResearch 实现对抗式收敛，Worker 负责向前推进并产出候选结果，Verifier 按验收标准打分并列出缺失项反压 Worker 补齐短板，两者在有限迭代预算内互相施压，直到结果达标或预算耗尽。
+证据一：据 [docs/auto-research.md]，AutoResearch 是 Gary 第一个面向用户的 harness 功能，用户只需填写 Task 和 Definition 两个字段，Gary 承诺"自己跑闭环、自己检查、达标才停"。
+证据二：据 [docs/architecture.md]，garybot-gateway 作为 HTTP 控制面统管路由、聊天 API 和自动化调度，AutoResearch 的运行状态与迭代控制在这一层完成，执行则经 garybot-bridge 分发到 Claude 或 Codex 等 provider。
+证据三：据 [docs/agent/runtime-map.md]，Verifier 通过内置 MCP tool auto_research_verdict 提交结构化判定，desktop/gary-desktop 的 AutoResearchPanel 作为控制面客户端实时展示每轮迭代进度与缺失项。
+结尾：这套闭环机制让各类优化型任务都能越跑越好——只要验收标准可量化，从研究调研到代码改进，Gary 都能在有限预算内自动逼近目标。</pre>
                 </div>
                 <div class="feedback-card">
                   <h3>Verifier 反馈</h3>
-                  <p class="summary">
-                    第二轮 verifier 依旧没有给出结构化 JSON，说明校验链路前半段还在抖。
-                    但从候选能看出一个重要趋势：它不是在乱改，而是在逐步强化证据表达。
-                  </p>
                   <div class="tag-row">
-                    <span class="tag bad">原始错误：expected ',' or '}' at line 1 column 228</span>
-                    <span class="tag ok">证据描述更完整</span>
-                    <span class="tag bad">前置说明仍存在</span>
+                    <span class="tag warn">总分：7.5</span>
+                    <span class="tag ok">来源归属修正</span>
+                    <span class="tag ok">用户卖点补上</span>
                   </div>
+                  <ul class="feedback-list">
+                    <li>强项：证据二终于归到正确的文档；证据三也把 <code>auto_research_verdict</code> tool 和桌面面板价值讲得更完整。</li>
+                    <li>弱项：标题“有限迭代收敛”太学术，核心观点术语密度也偏高，不够适合现场演讲时一眼抓住。</li>
+                    <li>建议：回到更口语化的标题，把 Worker / Verifier 关系讲成观众一听就懂的比喻。</li>
+                  </ul>
                   <div class="delta-grid">
                     <div class="delta-card">
                       <strong>相对上一轮的提升</strong>
-                      <p>证据表达更完整、更像“基于仓库文档的归纳”，而不是只是把关键词拼起来。</p>
+                      <p>从“技术正确”迈向“既正确又像 Demo”，尤其把 Task + Definition 的极简输入拉到了前台。</p>
                     </div>
                     <div class="delta-card">
-                      <strong>相对上一轮没解决的点</strong>
-                      <p>依旧把导语和分隔线放在正文前，说明它还没有真正学会“答案只保留最终产物”。</p>
+                      <strong>Verifier 下一轮施压点</strong>
+                      <p>开始不只盯事实，还盯表达方式本身：口语化、标题抓人和术语可理解性。</p>
                     </div>
-                  </div>
-                  <div class="issue-banner">
-                    <strong>本轮越界片段</strong>
-                    <p><span class="issue-mark">从两份文档中提取了关键边界……</span> 仍然属于正文前的额外解释，不是候选本身。</p>
                   </div>
                 </div>
               </div>
@@ -1150,66 +1184,44 @@
               <div class="round-top">
                 <div>
                   <span class="round-badge">Round 3</span>
-                  <h3 class="round-title">真正进入可解释收敛</h3>
+                  <h3 class="round-title">标题和类比更像 Demo 了，但整体仍然偏段落式</h3>
                   <p class="round-subtitle">
-                    第三轮开始，Verifier 首次给出可读的结构化 verdict。
-                    这时系统终于能明确告诉我们：不是整体不行，而是只差删掉前置说明。
+                    第三轮开始明显“对外化”：标题更抓人，Worker / Verifier 也被讲成“答题人 vs 出题人”。
+                    代价是它仍然像一段讲解稿，而不是一张 5 秒就能扫完的卡片。
                   </p>
                 </div>
-                <div class="score-pill">Overall Score: 7.5 / 10</div>
+                <div class="score-pill">7.8 / 10</div>
               </div>
               <div class="round-layout">
                 <div class="artifact">
                   <strong>Round 3 Output</strong>
-<pre>本轮策略：前两候选在证据行来源分配或结构上有疏漏，本次严格逐条对照所有十条维度，确保每行精准达标，语气统一偏向对外演示文案。
-
----
-
-标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
-目标：以五轮迭代不断优化方向，驱动研究结果持续收敛至最佳答案
-证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，为研究任务提供统一调度入口 [docs/architecture.md]
-证据二：`garybot-router` 负责线程与 transcript 全程管理，保障研究过程完整可回溯 [docs/agent/runtime-map.md]
-证据三：`desktop/gary-desktop` 打造桌面端 Mac App 体验，让研究成果随手可见 [docs/auto-research.md]
-收尾：整体架构清晰、流程自动，适合演示场合，让您的展示更稳、更有说服力</pre>
+<pre>标题：🔬 AutoResearch——让 AI 自己跑闭环来攻克开放性问题
+核心观点：AutoResearch 的核心是对抗式收敛：Worker 负责产出候选答案，Verifier 负责按验收标准打分挑刺，两者像"答题人 vs 出题人"一样互相施压——Worker 每轮必须补齐 Verifier 列出的缺失项，Verifier 每轮必须用更严格的眼光逼 Worker 进步，直到结果真正达标或迭代预算用尽。
+证据一：AutoResearch 是 Gary 第一个面向用户的 harness 功能 [docs/auto-research.md]，用户只需填写两个字段——Task（想让 Gary 做什么）和 Definition（怎样算做完），系统就自动启动双 Agent 迭代循环，自己检查自己。
+证据二：在架构层面 [docs/architecture.md]，garybot-gateway 是整个流程的控制面——它承载 HTTP API、MCP 服务和聊天接口，负责创建 AutoResearch 运行、管理迭代历史并控制停止语义，所有 Worker 和 Verifier 的调度都经过它。
+证据三：运行时地图 [docs/agent/runtime-map.md] 明确记载，Verifier 通过内部 MCP tool（auto_research_verdict）提交结构化判定结果，desktop/gary-desktop 作为客户端实时展示每轮运行进度，让用户直观观察迭代改进过程。
+结尾：🎯 AutoResearch 专为优化型任务设计——给出目标和验收标准，让 AI 自己越跑越好，跑到满意为止。</pre>
                 </div>
                 <div class="feedback-card">
                   <h3>Verifier 反馈</h3>
                   <div class="tag-row">
-                    <span class="tag warn">总分：7.5</span>
-                    <span class="tag bad">唯一硬伤：前置说明与分隔线</span>
-                    <span class="tag ok">六行主体几乎全中</span>
+                    <span class="tag warn">总分：7.8</span>
+                    <span class="tag ok">类比更好懂</span>
+                    <span class="tag bad">仍偏长、偏段落</span>
                   </div>
                   <ul class="feedback-list">
-                    <li>强项：六行主体对结构性维度几乎全部命中，三条证据来源分配正确，文案语气已经很像 demo 卡片。</li>
-                    <li>弱项：<strong>“输出前包含『本轮策略：……』段落及分隔线”</strong>，直接违反“只允许输出六行，不要任何额外说明”。</li>
-                    <li>建议：<strong>“删除所有前置策略说明和分隔线，直接输出六行正文。”</strong></li>
+                    <li>强项：“答题人 vs 出题人”的类比非常有效，非技术观众也能立刻理解 Worker / Verifier 的相互施压。</li>
+                    <li>弱项：整张卡片还是一段段自然文本，来源标记也开始成为视觉噪音，离“台上 5 秒可扫读”的效果还有距离。</li>
+                    <li>建议：继续压缩单行信息密度，让每行只承担一个卖点，同时减少学术感。</li>
                   </ul>
                   <div class="delta-grid">
                     <div class="delta-card">
-                      <strong>相对上一轮的跃迁</strong>
-                      <p>从这轮开始，系统终于能把失败原因说成结构化 verdict，而不是只停留在解析错误。</p>
+                      <strong>相对上一轮的提升</strong>
+                      <p>从“讲对”变成“开始会讲”，这是真正进入对外 demo 口径的一轮。</p>
                     </div>
                     <div class="delta-card">
-                      <strong>Verifier 下一轮施压点</strong>
-                      <p>已经不再追着正文内容打，而是专门盯住“前置说明必须删掉”这个单点。</p>
-                    </div>
-                  </div>
-                  <div class="issue-banner">
-                    <strong>本轮越界片段</strong>
-                    <p><span class="issue-mark">本轮策略：前两候选在证据行来源分配或结构上有疏漏……</span> 让整轮从“几乎通过”重新跌回格式违规。</p>
-                  </div>
-                  <div class="dimension-grid">
-                    <div class="dimension">
-                      <strong><span>只输出 6 行，无额外说明</span><span>1.0 / 10</span></strong>
-                      <span>输出前有“本轮策略”段落和“---”，六行主体之外存在额外内容。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>六行前缀顺序</span><span>10 / 10</span></strong>
-                      <span>标题、目标、证据一、证据二、证据三、收尾，顺序完全正确。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>收尾包含“适合演示”和“更稳”</span><span>10 / 10</span></strong>
-                      <span>收尾句准确命中两个关键词，并保持演示文案语气。</span>
+                      <strong>下一轮的优化方向</strong>
+                      <p>不是再补事实，而是做信息压缩和视觉扫读优化，让卡片更像卡片。</p>
                     </div>
                   </div>
                 </div>
@@ -1220,67 +1232,44 @@
               <div class="round-top">
                 <div>
                   <span class="round-badge">Round 4</span>
-                  <h3 class="round-title">正文更强了，但坏习惯没有消失</h3>
+                  <h3 class="round-title">扫描性和卖点压缩继续变好，但“对弈”仍有语义偏差</h3>
                   <p class="round-subtitle">
-                    第四轮已经沿着上一轮 feedback 去修正文细节，得分也涨了。
-                    但它依旧在答案前加了解释，而且这次还把 <code>Candidate #3</code> 带进来了。
+                    第四轮已经开始明显像一张会出现在现场投屏上的卡片：更短、更利落、每行一个重点。
+                    Verifier 开始抓更细的东西，比如“对弈”会让关系看起来过于零和。
                   </p>
                 </div>
-                <div class="score-pill">Overall Score: 7.7 / 10</div>
+                <div class="score-pill">8.2 / 10</div>
               </div>
               <div class="round-layout">
                 <div class="artifact">
                   <strong>Round 4 Output</strong>
-<pre>本轮聚焦前次失败根源：Candidate #3 在六行正文之前插入了"本轮策略"段落，直接违反"只允许输出六行"要求。本次严格剔除所有前置说明，确保候选输出本身仅含六行正文，且来源标记三选三不重复。
-
----
-
-标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
-目标：以五轮迭代不断优化研究方向，驱动结论持续收敛至最佳答案
-证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，是研究任务的统一调度入口 [docs/architecture.md]
-证据二：`garybot-router` 负责线程状态与完整 transcript 管理，确保每轮研究上下文贯通 [docs/agent/runtime-map.md]
-证据三：`desktop/gary-desktop` 作为桌面端 Mac App，将研究进展实时呈现于用户面前 [docs/auto-research.md]
-收尾：架构清晰、模块完备，适合演示的同时让每次研究结果更稳</pre>
+<pre>标题：AutoResearch——用双 AI 对弈解决开放性问题
+核心观点：像出题人与答题人互相较劲——Worker 全力产出候选答案，Verifier 按验收标准逐条打分并列出缺失项，两者每轮互相施压迫使结果收敛，这套机制即对抗式收敛。
+证据一：auto-research.md 明确指出 AutoResearch 是面向用户的 harness 功能，用户只需填写 Task（目标）和 Definition（验收标准）即可启动自动闭环。
+证据二：architecture.md 显示 garybot-gateway 是系统的 HTTP 控制面与装配层，AutoResearch 运行状态由它持久化并驱动每轮迭代调度。
+证据三：runtime-map.md 记载 desktop/gary-desktop 作为控制面客户端呈现运行进度，Verifier 的结构化 verdict 通过 MCP tool auto_research_verdict 提交，确保每轮判定可机读可追溯。
+结尾：AutoResearch 天生适合优化型任务——定义清晰就能跑，跑了就有反馈，反馈驱动下一轮，越跑越好。</pre>
                 </div>
                 <div class="feedback-card">
                   <h3>Verifier 反馈</h3>
                   <div class="tag-row">
-                    <span class="tag warn">总分：7.7</span>
-                    <span class="tag ok">正文继续提升</span>
-                    <span class="tag bad">前置说明 + 英文数字继续违规</span>
+                    <span class="tag warn">总分：8.2</span>
+                    <span class="tag ok">每行一个卖点</span>
+                    <span class="tag warn">“对弈”暗示过强</span>
                   </div>
                   <ul class="feedback-list">
-                    <li>强项：目标行、三条证据和收尾都更成熟，技术描述更稳，语气也更像发布型文案。</li>
-                    <li>弱项一：<strong>仍然在六行正文前插入前置说明段落</strong>，根本缺陷与第 3 轮完全相同。</li>
-                    <li>弱项二：前置说明里出现了 <code>Candidate #3</code>，额外触发了英文和阿拉伯数字违规。</li>
-                    <li>建议：<strong>“版本迭代说明应在候选提交的外部元数据中体现，绝不并入候选正文。”</strong></li>
+                    <li>强项：比喻前置、卖点压缩和逐行扫描性都有明显提升，已经很接近一张真正可展示的卡片。</li>
+                    <li>弱项：“对弈”会让人误解成零和博弈，而 Worker / Verifier 实际上是协作中的对抗关系。</li>
+                    <li>建议：保留视觉锚点和口语化表达，但把“对弈”收成更精准的“互审”或“互相挑刺”。</li>
                   </ul>
                   <div class="delta-grid">
                     <div class="delta-card">
                       <strong>相对上一轮的提升</strong>
-                      <p>正文变得更成熟，目标句更顺，证据二也更强调上下文贯通，整体更接近正式发布文案。</p>
+                      <p>verifier 终于不再追着“大方向不对”打，而是在抠词义和叙事微妙度，这说明整体质量已到高水位。</p>
                     </div>
                     <div class="delta-card">
-                      <strong>相对上一轮新增的问题</strong>
-                      <p>前置说明不仅没删掉，反而还带入了 <code>Candidate #3</code> 这样的英文与数字，让违规面更大。</p>
-                    </div>
-                  </div>
-                  <div class="issue-banner">
-                    <strong>本轮越界片段</strong>
-                    <p><span class="issue-mark">本轮聚焦前次失败根源：Candidate #3 …</span> 把解释、英文、数字三个问题一次性都写进了正文前。</p>
-                  </div>
-                  <div class="dimension-grid">
-                    <div class="dimension">
-                      <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
-                      <span>前置说明还在，所以虽然比上一轮更明确，但依旧直接冲突。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>全文中文，无多余英文/数字/符号</span><span>7.0 / 10</span></strong>
-                      <span>正文合规，但前置段落里的 “Candidate #3” 和 “---” 让整体再度失分。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>与当前最佳对比</span><span>vs #3</span></strong>
-                      <span>正文略优于第 3 轮，但根本缺陷未修复，所以只是小幅涨分，没实现质变。</span>
+                      <strong>离最佳版本还差什么</strong>
+                      <p>只剩措辞精度和最后一点视觉抓手，已经不是“会不会做”，而是“能不能更漂亮”。</p>
                     </div>
                   </div>
                 </div>
@@ -1291,67 +1280,44 @@
               <div class="round-top">
                 <div>
                   <span class="round-badge">Round 5</span>
-                  <h3 class="round-title">最好的正文，最稳定的残余问题</h3>
+                  <h3 class="round-title">最佳版本出现，但最后 0.1 分开始变得很难拿</h3>
                   <p class="round-subtitle">
-                    第五轮是全场最佳候选，正文质量已经非常接近成品。
-                    但它依然在最前面写了 <code>**策略：**</code>，于是整轮还是没过。
+                    第五轮把“对弈”收成了“互审”，标题更精准，emoji 也回来了。
+                    但 verifier 依旧觉得核心观点是超长单句，来源标记也略显学术化，所以停在了 8.3。
                   </p>
                 </div>
-                <div class="score-pill">Overall Score: 7.8 / 10</div>
+                <div class="score-pill">8.3 / 10 · Best</div>
               </div>
               <div class="round-layout">
                 <div class="artifact">
                   <strong>Round 5 Output</strong>
-<pre>**策略：** 完全剔除前置说明段落，直接输出六行正文。来源标记三行各取不同文档，语气统一为对外演示文案。
-
----
-
-标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
-目标：以五轮迭代不断优化研究方向，驱动结论持续收敛至最佳答案
-证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，为研究任务提供统一调度入口 [docs/architecture.md]
-证据二：`garybot-router` 负责线程管理与 transcript 持久化，确保研究过程完整可追溯 [docs/agent/runtime-map.md]
-证据三：`desktop/gary-desktop` 作为桌面端 Mac App，让研究成果随时触手可及 [docs/auto-research.md]
-收尾：多轮自动迭代让研究深度大幅提升，适合演示场景，结论更稳、更具说服力</pre>
+<pre>标题：🔬 AutoResearch：用双 AI 互审收敛开放性问题
+核心观点：AutoResearch 的核心是对抗式收敛——Worker 负责产出候选答案，Verifier 按验收标准打分并列出缺失项，Worker 被迫逐轮补齐短板，Verifier 则被迫给出更精确的判定，两者互相施压直到结果达标或预算耗尽。
+证据一：[docs/auto-research.md] 明确指出 AutoResearch 是 Gary 面向用户的首个 harness 功能，用户只需填写 Task（要做什么）和 Definition（怎样算完成），即可启动自动迭代闭环。
+证据二：[docs/architecture.md] 显示 garybot-gateway 作为 HTTP 控制面承担了 AutoResearch 的运行创建、迭代调度和停止语义，是整条链路的调度中枢。
+证据三：[docs/agent/runtime-map.md] 记载 desktop/gary-desktop 作为控制面客户端展示运行进度，而 Verifier 的结构化 verdict 通过内部 MCP tool（auto_research_verdict）提交，确保判定结果机器可读。
+结尾：AutoResearch 天然适合优化型任务——只要能定义"什么算好"，就能让双 AI 闭环越跑越好。</pre>
                 </div>
                 <div class="feedback-card">
                   <h3>Verifier 反馈</h3>
                   <div class="tag-row">
-                    <span class="tag warn">总分：7.8</span>
-                    <span class="tag ok">最佳正文质量</span>
-                    <span class="tag bad">仍未删除前置“策略”</span>
+                    <span class="tag warn">总分：8.3</span>
+                    <span class="tag ok">“互审”语义更准</span>
+                    <span class="tag warn">仍略偏学术</span>
                   </div>
                   <ul class="feedback-list">
-                    <li>强项：六行正文的关键词覆盖、前缀顺序、来源标记全部正确，收尾的演示文案感比前一轮还更强。</li>
-                    <li>弱项一：<strong>“正文前的策略说明段落直接违反维度1硬性要求。”</strong></li>
-                    <li>弱项二：Verifier 明确指出它“自称完全剔除前置说明，却又写出了前置说明”，这是最有戏剧性的对抗点。</li>
-                    <li>建议：<strong>“下一轮必须将六行正文作为唯一输出，彻底删除策略段落和分隔线。”</strong></li>
+                    <li>强项：标题中的“互审”比“对弈”更精准，核心观点也更容易被普通观众接受，这是全场最佳版本。</li>
+                    <li>弱项：核心观点仍是一句很长的话；三条证据还带着方括号来源，投屏时会显得有点像文档摘录而不是发布卡片。</li>
+                    <li>建议：如果还继续跑，下一轮大概率会继续把核心观点拆短，并把来源融入自然行文。</li>
                   </ul>
                   <div class="delta-grid">
                     <div class="delta-card">
-                      <strong>相对上一轮的提升</strong>
-                      <p>正文质量到达全场最佳，尤其收尾的说服力和对外表达明显更强。</p>
+                      <strong>为什么这轮最有说服力</strong>
+                      <p>它已经足够好到能直接拿来讲，同时又保留了“如果继续跑还能更好”的空间，这恰好说明 AutoResearch 对开放题的价值。</p>
                     </div>
                     <div class="delta-card">
-                      <strong>为什么它还是没过</strong>
-                      <p>系统已经收敛到唯一单点缺陷，但 worker 仍然保留“先写一段策略说明”的习惯，所以最后一步始终跨不过去。</p>
-                    </div>
-                  </div>
-                  <div class="issue-banner">
-                    <strong>本轮越界片段</strong>
-                    <p><span class="issue-mark">**策略：** 完全剔除前置说明段落……</span> 这句本身就在证明：它嘴上说删掉了，实际上还在输出前置说明。</p>
-                  </div>
-                  <div class="dimension-grid">
-                    <div class="dimension">
-                      <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
-                      <span>唯一没有真正收敛成功的核心维度，所有失败都集中在这里。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>语气像对外演示文案</span><span>9.5 / 10</span></strong>
-                      <span>正文演示感最好，尤其收尾“结论更稳、更具说服力”明显优于前面几轮。</span>
-                    </div>
-                    <div class="dimension">
-                      <strong><span>与当前最佳对比</span><span>vs #4</span></strong>
-                      <span>正文略优于第 4 轮，但失败模式毫无变化，说明系统已把问题收敛到一个稳定单点。</span>
+                      <strong>为什么它还没满分</strong>
+                      <p>最后 0.1 到 0.5 分已经落在表达微调，而不是功能性错误，这就是开放性优化任务的典型尾段。</p>
                     </div>
                   </div>
                 </div>
@@ -1362,25 +1328,25 @@
 
         <section class="section" id="takeaway">
           <div class="section-header">
-            <h2>这页最终想帮你讲清楚什么</h2>
-            <span>不是“它会不会做”，而是“它如何逼近更优”</span>
+            <h2>实验结论</h2>
+            <span>这次 Demo 要讲清楚的不是“它会不会做”，而是“它怎样持续逼近更优”</span>
           </div>
           <div class="task-grid">
             <div class="pullquote">
               <strong>对外表达</strong>
               <p>
-                AutoResearch 不是只适合判断题，它更适合那些需要反复打磨、逐步逼近更优结果的任务。
-                在这类开放性问题里，生成端不断逼近目标，验证端不断攻击剩余缺陷，
-                最后得到的是一个可以解释的收敛过程，而不只是一个看起来“差不多”的答案。
+                AutoResearch 最适合开放性、优化型任务。因为这类任务没有一眼就写对的唯一答案，
+                但每一轮都可以在上一轮基础上再好一点。Worker 不断试，Verifier 不断挑刺，
+                最后得到的不是“看起来差不多”，而是一个可解释、可追溯、可持续优化的收敛过程。
               </p>
             </div>
             <div class="detail-card">
-              <h3>这次 Demo 的一句话落点</h3>
+              <h3>这次实验真正证明了什么</h3>
               <ul class="feedback-list">
-                <li>前两轮先把答案主体做出来。</li>
-                <li>第三轮开始进入可解释收敛。</li>
-                <li>第四、五轮不是乱改，而是围绕同一个残余问题持续对抗。</li>
-                <li>最后失败也不是整体不行，而是只差一个明确到不能更明确的格式错误。</li>
+                <li>工程上：verifier verdict 主链路已经切到 MCP tool，5 个 verify 线程全部成功存下结构化 verdict。</li>
+                <li>产品上：在开放性卡片任务里，5 轮分数从 <code>6.8</code> 稳定提升到 <code>8.3</code>，每轮都能解释“为什么更好”。</li>
+                <li>系统上：第 1 轮即使出现了一次坏掉的字符串化参数，也能在同轮自愈重试，整个 run 没有因为 verdict 链路而中断。</li>
+                <li>后续上：下一步不是“修大 bug”，而是继续压低首跳 malformed tool args 的发生率，并把最终卡片再推向更轻、更快扫读的表达。</li>
               </ul>
             </div>
           </div>
@@ -1389,8 +1355,8 @@
 
       <footer class="footer">
         <div>
-          页面主题：<code>AutoResearch 对抗式收敛 Demo</code><br />
-          本页展示命题、五轮真实输出与逐轮 Verifier 反馈，不再只讲概念。
+          页面主题：<code>AutoResearch MCP Verdict Demo</code><br />
+          本页展示修复后的真实 run、五轮 score 轨迹、逐轮候选与逐轮 Verifier 反馈。
         </div>
         <a class="cta" href="https://github.com/Pyiner/GaryBot" target="_blank" rel="noreferrer">
           查看 GaryBot 仓库
