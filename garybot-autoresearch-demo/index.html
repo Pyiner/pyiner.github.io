@@ -401,6 +401,102 @@
         line-height: 1.5;
       }
 
+      .trajectory {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .trajectory-step {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 22px;
+        padding: 18px;
+      }
+
+      .trajectory-step.error {
+        background: rgba(154, 52, 18, 0.06);
+        border-color: rgba(154, 52, 18, 0.12);
+      }
+
+      .trajectory-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+
+      .trajectory-top strong {
+        font-size: 15px;
+      }
+
+      .trajectory-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--blue);
+      }
+
+      .trajectory-step.error .trajectory-value {
+        color: var(--danger);
+      }
+
+      .trajectory-track {
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(20, 34, 29, 0.08);
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+
+      .trajectory-fill {
+        width: var(--pct, 0%);
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--accent), var(--amber));
+      }
+
+      .trajectory-step.error .trajectory-fill {
+        background: linear-gradient(90deg, #c2410c, #ea580c);
+      }
+
+      .trajectory-note {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .focus-strip {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr 1fr;
+        gap: 14px;
+        margin-top: 18px;
+      }
+
+      .focus-card {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 22px;
+        padding: 18px;
+      }
+
+      .focus-card h3 {
+        margin: 0 0 12px;
+        font-size: 17px;
+      }
+
+      .focus-card p,
+      .focus-card li {
+        color: var(--muted);
+        line-height: 1.68;
+      }
+
+      .focus-card ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
       .rounds {
         display: grid;
         gap: 18px;
@@ -569,6 +665,64 @@
         line-height: 1.65;
       }
 
+      .delta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .delta-card {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 250, 243, 0.92);
+        border: 1px solid rgba(20, 34, 29, 0.06);
+      }
+
+      .delta-card strong {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .delta-card p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
+      }
+
+      .issue-banner {
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(154, 52, 18, 0.08), rgba(180, 83, 9, 0.06));
+        border: 1px solid rgba(154, 52, 18, 0.12);
+      }
+
+      .issue-banner strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--danger);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .issue-banner p {
+        margin: 0;
+        color: #5f4032;
+        line-height: 1.68;
+      }
+
+      .issue-mark {
+        background: rgba(154, 52, 18, 0.14);
+        color: var(--danger);
+        padding: 2px 6px;
+        border-radius: 8px;
+        font-weight: 700;
+      }
+
       .footer {
         display: flex;
         justify-content: space-between;
@@ -605,7 +759,10 @@
         .hero-grid,
         .task-grid,
         .round-layout,
-        .score-board {
+        .score-board,
+        .trajectory,
+        .focus-strip,
+        .delta-grid {
           grid-template-columns: 1fr;
         }
 
@@ -805,6 +962,73 @@
               <span>最佳候选出现，但仍未删干净前置“策略”说明，最终预算耗尽。</span>
             </div>
           </div>
+          <div class="trajectory">
+            <div class="trajectory-step error" style="--pct: 0%;">
+              <div class="trajectory-top">
+                <strong>第 1 轮</strong>
+                <span class="trajectory-value">解析失败</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">答案主体成形，但 verifier 还没稳定给出结构化判决。</div>
+            </div>
+            <div class="trajectory-step error" style="--pct: 0%;">
+              <div class="trajectory-top">
+                <strong>第 2 轮</strong>
+                <span class="trajectory-value">解析失败</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">内容更强，但系统可解释性还没完全建立起来。</div>
+            </div>
+            <div class="trajectory-step" style="--pct: 75%;">
+              <div class="trajectory-top">
+                <strong>第 3 轮</strong>
+                <span class="trajectory-value">7.5</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">首次把问题清晰压缩到“前置说明与分隔线”这一单点。</div>
+            </div>
+            <div class="trajectory-step" style="--pct: 77%;">
+              <div class="trajectory-top">
+                <strong>第 4 轮</strong>
+                <span class="trajectory-value">7.7</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">正文继续提升，但坏习惯仍然稳定复现。</div>
+            </div>
+            <div class="trajectory-step" style="--pct: 78%;">
+              <div class="trajectory-top">
+                <strong>第 5 轮</strong>
+                <span class="trajectory-value">7.8</span>
+              </div>
+              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
+              <div class="trajectory-note">最佳候选出现，系统却仍被同一个残余缺陷拦住。</div>
+            </div>
+          </div>
+          <div class="focus-strip">
+            <div class="focus-card">
+              <h3>Verifier 焦点如何变化</h3>
+              <ul>
+                <li>第 1 到第 2 轮：连结构化 verdict 都不稳定，重点还是“先把问题说清楚”。</li>
+                <li>第 3 轮：第一次清晰指出，主体六行其实已经大体合格。</li>
+                <li>第 4 到第 5 轮：焦点完全收缩到同一个剩余缺陷，不再分散。</li>
+              </ul>
+            </div>
+            <div class="focus-card">
+              <h3>稳定残余缺陷</h3>
+              <p>
+                这五轮最有价值的地方，不是分数从零散到 7.8，而是 verifier 持续把失败原因压缩到了同一个点：
+                <strong>答案前的说明块始终没有被真正删除。</strong>
+              </p>
+            </div>
+            <div class="focus-card">
+              <h3>现场讲解抓手</h3>
+              <ul>
+                <li>先展示它很快就能做出“主体内容”。</li>
+                <li>再展示 verifier 如何把问题逼到一个单点。</li>
+                <li>最后强调：开放题的价值不在一次答对，而在持续逼近更优。</li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         <section class="section" id="rounds">
@@ -850,6 +1074,20 @@
                     <span class="tag warn">内容主体已成形</span>
                     <span class="tag bad">前置说明已越界</span>
                   </div>
+                  <div class="delta-grid">
+                    <div class="delta-card">
+                      <strong>这一轮建立了什么</strong>
+                      <p>六行正文结构已经出现，三条证据和收尾也都开始贴近最终目标。</p>
+                    </div>
+                    <div class="delta-card">
+                      <strong>这一轮为什么没过</strong>
+                      <p>它把“解释自己正在做什么”的话，直接写进了最终答案前面。</p>
+                    </div>
+                  </div>
+                  <div class="issue-banner">
+                    <strong>本轮越界片段</strong>
+                    <p><span class="issue-mark">直接输出符合所有评分维度的六行卡片，不做额外叙述。</span> 以及 <span class="issue-mark">---</span> 都不该出现在六行正文之前。</p>
+                  </div>
                 </div>
               </div>
             </article>
@@ -889,6 +1127,20 @@
                     <span class="tag bad">原始错误：expected ',' or '}' at line 1 column 228</span>
                     <span class="tag ok">证据描述更完整</span>
                     <span class="tag bad">前置说明仍存在</span>
+                  </div>
+                  <div class="delta-grid">
+                    <div class="delta-card">
+                      <strong>相对上一轮的提升</strong>
+                      <p>证据表达更完整、更像“基于仓库文档的归纳”，而不是只是把关键词拼起来。</p>
+                    </div>
+                    <div class="delta-card">
+                      <strong>相对上一轮没解决的点</strong>
+                      <p>依旧把导语和分隔线放在正文前，说明它还没有真正学会“答案只保留最终产物”。</p>
+                    </div>
+                  </div>
+                  <div class="issue-banner">
+                    <strong>本轮越界片段</strong>
+                    <p><span class="issue-mark">从两份文档中提取了关键边界……</span> 仍然属于正文前的额外解释，不是候选本身。</p>
                   </div>
                 </div>
               </div>
@@ -932,6 +1184,20 @@
                     <li>弱项：<strong>“输出前包含『本轮策略：……』段落及分隔线”</strong>，直接违反“只允许输出六行，不要任何额外说明”。</li>
                     <li>建议：<strong>“删除所有前置策略说明和分隔线，直接输出六行正文。”</strong></li>
                   </ul>
+                  <div class="delta-grid">
+                    <div class="delta-card">
+                      <strong>相对上一轮的跃迁</strong>
+                      <p>从这轮开始，系统终于能把失败原因说成结构化 verdict，而不是只停留在解析错误。</p>
+                    </div>
+                    <div class="delta-card">
+                      <strong>Verifier 下一轮施压点</strong>
+                      <p>已经不再追着正文内容打，而是专门盯住“前置说明必须删掉”这个单点。</p>
+                    </div>
+                  </div>
+                  <div class="issue-banner">
+                    <strong>本轮越界片段</strong>
+                    <p><span class="issue-mark">本轮策略：前两候选在证据行来源分配或结构上有疏漏……</span> 让整轮从“几乎通过”重新跌回格式违规。</p>
+                  </div>
                   <div class="dimension-grid">
                     <div class="dimension">
                       <strong><span>只输出 6 行，无额外说明</span><span>1.0 / 10</span></strong>
@@ -989,6 +1255,20 @@
                     <li>弱项二：前置说明里出现了 <code>Candidate #3</code>，额外触发了英文和阿拉伯数字违规。</li>
                     <li>建议：<strong>“版本迭代说明应在候选提交的外部元数据中体现，绝不并入候选正文。”</strong></li>
                   </ul>
+                  <div class="delta-grid">
+                    <div class="delta-card">
+                      <strong>相对上一轮的提升</strong>
+                      <p>正文变得更成熟，目标句更顺，证据二也更强调上下文贯通，整体更接近正式发布文案。</p>
+                    </div>
+                    <div class="delta-card">
+                      <strong>相对上一轮新增的问题</strong>
+                      <p>前置说明不仅没删掉，反而还带入了 <code>Candidate #3</code> 这样的英文与数字，让违规面更大。</p>
+                    </div>
+                  </div>
+                  <div class="issue-banner">
+                    <strong>本轮越界片段</strong>
+                    <p><span class="issue-mark">本轮聚焦前次失败根源：Candidate #3 …</span> 把解释、英文、数字三个问题一次性都写进了正文前。</p>
+                  </div>
                   <div class="dimension-grid">
                     <div class="dimension">
                       <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
@@ -1046,6 +1326,20 @@
                     <li>弱项二：Verifier 明确指出它“自称完全剔除前置说明，却又写出了前置说明”，这是最有戏剧性的对抗点。</li>
                     <li>建议：<strong>“下一轮必须将六行正文作为唯一输出，彻底删除策略段落和分隔线。”</strong></li>
                   </ul>
+                  <div class="delta-grid">
+                    <div class="delta-card">
+                      <strong>相对上一轮的提升</strong>
+                      <p>正文质量到达全场最佳，尤其收尾的说服力和对外表达明显更强。</p>
+                    </div>
+                    <div class="delta-card">
+                      <strong>为什么它还是没过</strong>
+                      <p>系统已经收敛到唯一单点缺陷，但 worker 仍然保留“先写一段策略说明”的习惯，所以最后一步始终跨不过去。</p>
+                    </div>
+                  </div>
+                  <div class="issue-banner">
+                    <strong>本轮越界片段</strong>
+                    <p><span class="issue-mark">**策略：** 完全剔除前置说明段落……</span> 这句本身就在证明：它嘴上说删掉了，实际上还在输出前置说明。</p>
+                  </div>
                   <div class="dimension-grid">
                     <div class="dimension">
                       <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
