@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoResearch 对抗式收敛 Demo</title>
+    <meta
+      name="description"
+      content="用五轮 AutoResearch 演示对抗式收敛如何让开放性任务持续逼近更优答案。"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --paper: rgba(255, 251, 245, 0.8);
+        --paper-strong: #fffaf3;
+        --ink: #14221d;
+        --muted: #58655e;
+        --line: rgba(20, 34, 29, 0.12);
+        --accent: #0f766e;
+        --accent-2: #b45309;
+        --accent-3: #164e63;
+        --shadow: 0 24px 60px rgba(20, 34, 29, 0.12);
+        --radius: 28px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
+          radial-gradient(circle at top right, rgba(180, 83, 9, 0.12), transparent 24%),
+          linear-gradient(180deg, #f7f1e8 0%, #f2ece3 46%, #efe9df 100%);
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(20, 34, 29, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(20, 34, 29, 0.05) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 78%);
+      }
+
+      .page {
+        width: min(1200px, calc(100vw - 40px));
+        margin: 0 auto;
+        padding: 32px 0 72px;
+      }
+
+      .topline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 26px;
+        color: var(--muted);
+        font-size: 14px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .topline span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.12);
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, rgba(255, 250, 243, 0.92), rgba(248, 242, 232, 0.86));
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 36px;
+        box-shadow: var(--shadow);
+        padding: 42px;
+      }
+
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -80px;
+        top: -80px;
+        width: 300px;
+        height: 300px;
+        border-radius: 999px;
+        background:
+          radial-gradient(circle, rgba(180, 83, 9, 0.26) 0%, rgba(180, 83, 9, 0.05) 38%, transparent 68%);
+        pointer-events: none;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 14px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.1);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 18px 0 18px;
+        font-family: "Noto Serif SC", serif;
+        font-size: clamp(42px, 6vw, 76px);
+        line-height: 1.03;
+        letter-spacing: -0.04em;
+        max-width: 10.5em;
+      }
+
+      .hero p {
+        margin: 0;
+        max-width: 740px;
+        font-size: 19px;
+        line-height: 1.7;
+        color: #24322b;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr;
+        gap: 28px;
+        margin-top: 34px;
+      }
+
+      .stat-strip,
+      .hero-card,
+      .section,
+      .timeline-card,
+      .model-card,
+      .quote,
+      .mini-panel {
+        backdrop-filter: blur(12px);
+      }
+
+      .stat-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .stat {
+        background: rgba(255, 255, 255, 0.62);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 22px;
+        padding: 18px;
+      }
+
+      .stat strong {
+        display: block;
+        font-size: 31px;
+        line-height: 1;
+        margin-bottom: 10px;
+      }
+
+      .stat span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .hero-card {
+        background: linear-gradient(180deg, rgba(13, 33, 30, 0.94), rgba(18, 46, 41, 0.9));
+        color: #f8f2e9;
+        border-radius: 28px;
+        padding: 24px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .hero-card::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(140deg, rgba(255, 255, 255, 0.06), transparent 36%),
+          radial-gradient(circle at right top, rgba(15, 118, 110, 0.28), transparent 42%);
+        pointer-events: none;
+      }
+
+      .hero-card h2 {
+        margin: 0 0 14px;
+        font-size: 20px;
+      }
+
+      .hero-card ul {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.7;
+        color: rgba(248, 242, 233, 0.86);
+      }
+
+      .content {
+        display: grid;
+        gap: 22px;
+        margin-top: 24px;
+      }
+
+      .section {
+        position: relative;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 28px;
+        overflow: hidden;
+      }
+
+      .section::before {
+        content: "";
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 4px;
+        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      }
+
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .section-header h2 {
+        margin: 0;
+        font-size: 24px;
+      }
+
+      .section-header span {
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .thesis {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+      }
+
+      .quote {
+        background: var(--paper-strong);
+        border-radius: 24px;
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        padding: 24px;
+      }
+
+      .quote strong {
+        display: block;
+        margin-bottom: 14px;
+        color: var(--accent-3);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .quote p {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.7;
+      }
+
+      .mini-panel {
+        background: linear-gradient(180deg, rgba(22, 78, 99, 0.08), rgba(15, 118, 110, 0.05));
+        border-radius: 24px;
+        border: 1px solid rgba(22, 78, 99, 0.1);
+        padding: 22px;
+      }
+
+      .mini-panel h3 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .mini-panel p,
+      .mini-panel li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .mini-panel ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .timeline-card {
+        position: relative;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 24px;
+        padding: 20px;
+        min-height: 240px;
+        transform: translateY(24px);
+        opacity: 0;
+        animation: reveal 0.7s ease forwards;
+      }
+
+      .timeline-card:nth-child(2) { animation-delay: 0.08s; }
+      .timeline-card:nth-child(3) { animation-delay: 0.16s; }
+      .timeline-card:nth-child(4) { animation-delay: 0.24s; }
+      .timeline-card:nth-child(5) { animation-delay: 0.32s; }
+
+      .timeline-card::after {
+        content: "";
+        position: absolute;
+        inset: auto 18px 18px 18px;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        opacity: 0.75;
+      }
+
+      .round {
+        display: inline-block;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.1);
+        color: var(--accent);
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+
+      .timeline-card h3 {
+        margin: 16px 0 10px;
+        font-size: 19px;
+      }
+
+      .timeline-card p {
+        margin: 0 0 12px;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+
+      .score {
+        font-size: 13px;
+        color: var(--accent-2);
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+
+      .model-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .model-card {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 24px;
+        padding: 22px;
+      }
+
+      .model-card h3 {
+        margin: 0 0 10px;
+        font-size: 20px;
+      }
+
+      .model-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+
+      .process {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .process .mini-panel {
+        min-height: 220px;
+      }
+
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
+        margin-top: 22px;
+        padding: 24px 6px 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        border-radius: 999px;
+        background: linear-gradient(135deg, var(--accent), #0f5b55);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: 0 16px 32px rgba(15, 118, 110, 0.24);
+      }
+
+      code {
+        font-family: "IBM Plex Sans", monospace;
+        background: rgba(20, 34, 29, 0.07);
+        border-radius: 8px;
+        padding: 2px 7px;
+      }
+
+      @keyframes reveal {
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 1080px) {
+        .hero-grid,
+        .thesis,
+        .timeline,
+        .model-grid,
+        .process {
+          grid-template-columns: 1fr;
+        }
+
+        .stat-strip {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          width: min(100vw - 24px, 1200px);
+          padding-top: 18px;
+        }
+
+        .hero,
+        .section {
+          padding: 22px;
+        }
+
+        .topline,
+        .footer {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        h1 {
+          font-size: 38px;
+        }
+
+        .hero p,
+        .quote p {
+          font-size: 17px;
+        }
+
+        .stat-strip {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <div class="topline">
+        <span><i class="dot"></i> AutoResearch Demo Landing Page</span>
+        <span>GaryBot / 五轮对抗式收敛 / 开放性任务优化</span>
+      </div>
+
+      <section class="hero">
+        <div class="eyebrow">AutoResearch · Adversarial Convergence</div>
+        <h1>让开放性任务，持续逼近更优答案。</h1>
+        <p>
+          这不是一次普通的多轮润色，而是一场由
+          <strong>Worker</strong> 持续生成候选、由
+          <strong>Verifier</strong> 持续攻击剩余缺陷的对抗式收敛过程。
+          在开放题、优化题和演示型任务里，AutoResearch 的价值不在于第一轮就完美，
+          而在于把“还能更好一点”变成可见、可解释、可持续推进的循环。
+        </p>
+
+        <div class="hero-grid">
+          <div class="stat-strip">
+            <div class="stat">
+              <strong>5</strong>
+              <span>完整跑满五轮，展示真实收敛轨迹</span>
+            </div>
+            <div class="stat">
+              <strong>7.8</strong>
+              <span>最佳得分，来自第 5 轮候选</span>
+            </div>
+            <div class="stat">
+              <strong>1</strong>
+              <span>最终只剩 1 个稳定残余缺陷</span>
+            </div>
+            <div class="stat">
+              <strong>3</strong>
+              <span>证据行分别锚定 3 份仓库文档</span>
+            </div>
+          </div>
+
+          <aside class="hero-card">
+            <h2>这次 Demo 任务</h2>
+            <ul>
+              <li>基于仓库文档，生成一张中文 AutoResearch 介绍卡片。</li>
+              <li>严格限定为 6 行，前缀、关键词、来源标记都要命中。</li>
+              <li>目标不是“有没有答案”，而是“能不能一轮轮更接近合格答案”。</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <div class="content">
+        <section class="section">
+          <div class="section-header">
+            <h2>为什么这类任务特别适合 AutoResearch</h2>
+            <span>开放性任务的核心，不是对错，而是更优</span>
+          </div>
+          <div class="thesis">
+            <article class="quote">
+              <strong>核心表达</strong>
+              <p>
+                AutoResearch 特别适合开放性、优化型问题。
+                因为这类问题通常没有一眼就写对的标准答案，
+                但非常适合通过一轮轮验证，把结果持续逼近更优版本。
+              </p>
+            </article>
+            <div class="mini-panel">
+              <h3>这次演示想证明什么</h3>
+              <ul>
+                <li>它不会只做“表面润色”，而是持续缩小剩余问题。</li>
+                <li>Verifier 会把失败原因压缩成更少、更具体的点。</li>
+                <li>即使没有最终通过，也能解释为什么还没过。</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <h2>五轮发生了什么</h2>
+            <span>从“有主体”到“只剩一个稳定缺陷”</span>
+          </div>
+          <div class="timeline">
+            <article class="timeline-card">
+              <span class="round">Round 1</span>
+              <h3>先把主体搭出来</h3>
+              <p>
+                第一轮已经写出了 6 行正文骨架，三条证据也基本抓对了对象。
+                但它在正文前面加了解释和分隔线，先天违反格式要求。
+              </p>
+              <div class="score">Verifier 结果：JSON 解析失败，但暴露了前置说明问题</div>
+            </article>
+
+            <article class="timeline-card">
+              <span class="round">Round 2</span>
+              <h3>内容更完整，约束仍未收紧</h3>
+              <p>
+                第二轮把技术归纳写得更清楚，证据感更强，已经像一张正式介绍卡片。
+                但它依然没舍得删掉前置说明。
+              </p>
+              <div class="score">Verifier 结果：再次解析失败，说明问题仍在同一处</div>
+            </article>
+
+            <article class="timeline-card">
+              <span class="round">Round 3</span>
+              <h3>进入可解释收敛</h3>
+              <p>
+                从这一轮开始，Verifier 给出了结构化打分。
+                它明确指出：正文 6 行几乎全对，唯一硬伤就是前面多出的“策略说明”。
+              </p>
+              <div class="score">Overall Score：7.5 / 10</div>
+            </article>
+
+            <article class="timeline-card">
+              <span class="round">Round 4</span>
+              <h3>正文继续变好，坏习惯没消失</h3>
+              <p>
+                标题、证据与收尾都更成熟，整体文案感更强。
+                但它还是在正式答案前写了一段解释，并夹带了英文和数字。
+              </p>
+              <div class="score">Overall Score：7.7 / 10</div>
+            </article>
+
+            <article class="timeline-card">
+              <span class="round">Round 5</span>
+              <h3>最接近通过的一轮</h3>
+              <p>
+                第五轮的正文已经是最佳版本，收尾尤其更适合演示场景。
+                但它仍然保留了“策略：”前缀，最终只剩这一个稳定残余缺陷。
+              </p>
+              <div class="score">Overall Score：7.8 / 10</div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <h2>这不是普通润色，而是对抗式收敛</h2>
+            <span>Worker 负责逼近，Verifier 负责施压</span>
+          </div>
+          <div class="model-grid">
+            <article class="model-card">
+              <h3>Worker</h3>
+              <p>
+                持续生成更强候选，不是机械改字，而是尝试命中结构、证据、语气和约束。
+                每一轮都在问：我能不能更像最终答案一点？
+              </p>
+            </article>
+            <article class="model-card">
+              <h3>Verifier</h3>
+              <p>
+                像一个专门挑漏洞的裁判。它不会因为答案看起来“差不多”就放行，
+                而是持续攻击剩余缺陷，直到问题被压缩成最具体的残留点。
+              </p>
+            </article>
+            <article class="model-card">
+              <h3>结果</h3>
+              <p>
+                对开放题来说，价值不在第一轮就完美，
+                而在于把“还能更好一点”变成有方向、有反馈、有边界的推进过程。
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <h2>为什么它对开放性和优化型问题更有价值</h2>
+            <span>不是找唯一正确答案，而是逼近更优答案</span>
+          </div>
+          <div class="process">
+            <div class="mini-panel">
+              <h3>确定性任务</h3>
+              <p>
+                更像一次性验收。通过就是通过，失败通常意味着“哪里错了”。
+                在这类任务里，多轮循环的价值存在，但不一定最突出。
+              </p>
+            </div>
+            <div class="mini-panel">
+              <h3>开放性任务</h3>
+              <p>
+                更像持续优化。问题往往不是“对不对”，而是“能不能更好”。
+                AutoResearch 的价值正是在这里最明显：它能把更优解的逼近过程变得可视、可解释、可重复。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-header">
+            <h2>这次 Demo 的一句话总结</h2>
+            <span>把讲法留给现场，把结构留给系统</span>
+          </div>
+          <article class="quote">
+            <strong>Ready To Present</strong>
+            <p>
+              AutoResearch 的核心不是自动多跑几轮，
+              而是把生成与验证放进一个对抗式循环里。
+              生成端不断逼近目标，验证端不断攻击剩余缺陷。
+              最后得到的不是“看起来更像对”，而是“能解释为什么还没过，或者为什么终于过了”。
+            </p>
+          </article>
+        </section>
+      </div>
+
+      <footer class="footer">
+        <div>
+          页面主题：<code>AutoResearch 对抗式收敛 Demo</code><br />
+          内容基于一次真实五轮运行的演示总结。
+        </div>
+        <a class="cta" href="https://github.com/Pyiner/GaryBot" target="_blank" rel="noreferrer">
+          查看仓库
+        </a>
+      </footer>
+    </main>
+  </body>
+</html>
