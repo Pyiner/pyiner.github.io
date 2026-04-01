@@ -6,7 +6,7 @@
     <title>AutoResearch 对抗式收敛 Demo</title>
     <meta
       name="description"
-      content="用五轮 AutoResearch 演示对抗式收敛如何让开放性任务持续逼近更优答案。"
+      content="展示 AutoResearch 如何在五轮对抗式循环里，让一个开放性任务持续逼近更优答案。"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,14 +17,19 @@
     <style>
       :root {
         --bg: #f4efe7;
-        --paper: rgba(255, 251, 245, 0.8);
+        --paper: rgba(255, 251, 245, 0.84);
         --paper-strong: #fffaf3;
         --ink: #14221d;
-        --muted: #58655e;
-        --line: rgba(20, 34, 29, 0.12);
+        --muted: #5a655e;
+        --line: rgba(20, 34, 29, 0.1);
         --accent: #0f766e;
-        --accent-2: #b45309;
-        --accent-3: #164e63;
+        --accent-soft: rgba(15, 118, 110, 0.1);
+        --amber: #b45309;
+        --amber-soft: rgba(180, 83, 9, 0.12);
+        --blue: #164e63;
+        --blue-soft: rgba(22, 78, 99, 0.1);
+        --danger: #9a3412;
+        --danger-soft: rgba(154, 52, 18, 0.1);
         --shadow: 0 24px 60px rgba(20, 34, 29, 0.12);
         --radius: 28px;
       }
@@ -61,9 +66,9 @@
       }
 
       .page {
-        width: min(1200px, calc(100vw - 40px));
+        width: min(1280px, calc(100vw - 40px));
         margin: 0 auto;
-        padding: 32px 0 72px;
+        padding: 28px 0 72px;
       }
 
       .topline {
@@ -88,14 +93,14 @@
         width: 9px;
         height: 9px;
         border-radius: 999px;
-        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        background: linear-gradient(135deg, var(--accent), var(--amber));
         box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.12);
       }
 
       .hero {
         position: relative;
         overflow: hidden;
-        background: linear-gradient(135deg, rgba(255, 250, 243, 0.92), rgba(248, 242, 232, 0.86));
+        background: linear-gradient(135deg, rgba(255, 250, 243, 0.94), rgba(248, 242, 232, 0.9));
         border: 1px solid rgba(20, 34, 29, 0.08);
         border-radius: 36px;
         box-shadow: var(--shadow);
@@ -105,13 +110,13 @@
       .hero::after {
         content: "";
         position: absolute;
-        right: -80px;
-        top: -80px;
-        width: 300px;
-        height: 300px;
+        right: -90px;
+        top: -90px;
+        width: 320px;
+        height: 320px;
         border-radius: 999px;
         background:
-          radial-gradient(circle, rgba(180, 83, 9, 0.26) 0%, rgba(180, 83, 9, 0.05) 38%, transparent 68%);
+          radial-gradient(circle, rgba(180, 83, 9, 0.24) 0%, rgba(180, 83, 9, 0.06) 38%, transparent 70%);
         pointer-events: none;
       }
 
@@ -121,7 +126,7 @@
         gap: 10px;
         padding: 9px 14px;
         border-radius: 999px;
-        background: rgba(15, 118, 110, 0.1);
+        background: var(--accent-soft);
         color: var(--accent);
         font-size: 13px;
         font-weight: 600;
@@ -132,7 +137,7 @@
       h1 {
         margin: 18px 0 18px;
         font-family: "Noto Serif SC", serif;
-        font-size: clamp(42px, 6vw, 76px);
+        font-size: clamp(40px, 6vw, 74px);
         line-height: 1.03;
         letter-spacing: -0.04em;
         max-width: 10.5em;
@@ -140,7 +145,7 @@
 
       .hero p {
         margin: 0;
-        max-width: 740px;
+        max-width: 760px;
         font-size: 19px;
         line-height: 1.7;
         color: #24322b;
@@ -148,25 +153,26 @@
 
       .hero-grid {
         display: grid;
-        grid-template-columns: 1.6fr 1fr;
+        grid-template-columns: 1.5fr 1fr;
         gap: 28px;
         margin-top: 34px;
-      }
-
-      .stat-strip,
-      .hero-card,
-      .section,
-      .timeline-card,
-      .model-card,
-      .quote,
-      .mini-panel {
-        backdrop-filter: blur(12px);
       }
 
       .stat-strip {
         display: grid;
         grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: 14px;
+      }
+
+      .stat,
+      .hero-card,
+      .section,
+      .panel,
+      .round-card,
+      .pullquote,
+      .detail-card,
+      .feedback-card {
+        backdrop-filter: blur(12px);
       }
 
       .stat {
@@ -178,7 +184,7 @@
 
       .stat strong {
         display: block;
-        font-size: 31px;
+        font-size: 30px;
         line-height: 1;
         margin-bottom: 10px;
       }
@@ -186,10 +192,11 @@
       .stat span {
         color: var(--muted);
         font-size: 14px;
+        line-height: 1.5;
       }
 
       .hero-card {
-        background: linear-gradient(180deg, rgba(13, 33, 30, 0.94), rgba(18, 46, 41, 0.9));
+        background: linear-gradient(180deg, rgba(13, 33, 30, 0.95), rgba(18, 46, 41, 0.91));
         color: #f8f2e9;
         border-radius: 28px;
         padding: 24px;
@@ -219,6 +226,26 @@
         color: rgba(248, 242, 233, 0.86);
       }
 
+      .quick-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 24px;
+      }
+
+      .quick-nav a {
+        display: inline-flex;
+        align-items: center;
+        padding: 11px 14px;
+        border-radius: 999px;
+        text-decoration: none;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.65);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        font-size: 14px;
+        font-weight: 600;
+      }
+
       .content {
         display: grid;
         gap: 22px;
@@ -240,7 +267,7 @@
         position: absolute;
         inset: 0 auto 0 0;
         width: 4px;
-        background: linear-gradient(180deg, var(--accent), var(--accent-2));
+        background: linear-gradient(180deg, var(--accent), var(--amber));
       }
 
       .section-header {
@@ -261,151 +288,285 @@
         font-size: 14px;
       }
 
-      .thesis {
+      .task-grid {
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
+        grid-template-columns: 1.2fr 0.8fr;
         gap: 18px;
       }
 
-      .quote {
+      .panel,
+      .detail-card,
+      .feedback-card {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 24px;
+        padding: 22px;
+      }
+
+      .panel h3,
+      .detail-card h3,
+      .feedback-card h3 {
+        margin: 0 0 14px;
+        font-size: 18px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .meta-item {
+        padding: 14px;
+        border-radius: 18px;
+        background: rgba(255, 250, 243, 0.9);
+        border: 1px solid rgba(20, 34, 29, 0.06);
+      }
+
+      .meta-item strong {
+        display: block;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .meta-item span {
+        font-size: 15px;
+        line-height: 1.55;
+      }
+
+      .prompt-list {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.72;
+        color: var(--muted);
+      }
+
+      .prompt-list li + li {
+        margin-top: 8px;
+      }
+
+      .pullquote {
         background: var(--paper-strong);
         border-radius: 24px;
         border: 1px solid rgba(20, 34, 29, 0.08);
         padding: 24px;
       }
 
-      .quote strong {
+      .pullquote strong {
         display: block;
         margin-bottom: 14px;
-        color: var(--accent-3);
+        color: var(--blue);
         font-size: 13px;
         letter-spacing: 0.08em;
         text-transform: uppercase;
       }
 
-      .quote p {
+      .pullquote p {
         margin: 0;
         font-size: 20px;
-        line-height: 1.7;
+        line-height: 1.72;
       }
 
-      .mini-panel {
-        background: linear-gradient(180deg, rgba(22, 78, 99, 0.08), rgba(15, 118, 110, 0.05));
-        border-radius: 24px;
-        border: 1px solid rgba(22, 78, 99, 0.1);
-        padding: 22px;
-      }
-
-      .mini-panel h3 {
-        margin: 0 0 12px;
-        font-size: 18px;
-      }
-
-      .mini-panel p,
-      .mini-panel li {
-        color: var(--muted);
-        line-height: 1.7;
-      }
-
-      .mini-panel ul {
-        margin: 0;
-        padding-left: 18px;
-      }
-
-      .timeline {
+      .score-board {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 16px;
+        gap: 14px;
       }
 
-      .timeline-card {
-        position: relative;
+      .score-card {
         background: rgba(255, 255, 255, 0.7);
         border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 24px;
-        padding: 20px;
-        min-height: 240px;
-        transform: translateY(24px);
-        opacity: 0;
-        animation: reveal 0.7s ease forwards;
+        border-radius: 22px;
+        padding: 18px;
       }
 
-      .timeline-card:nth-child(2) { animation-delay: 0.08s; }
-      .timeline-card:nth-child(3) { animation-delay: 0.16s; }
-      .timeline-card:nth-child(4) { animation-delay: 0.24s; }
-      .timeline-card:nth-child(5) { animation-delay: 0.32s; }
-
-      .timeline-card::after {
-        content: "";
-        position: absolute;
-        inset: auto 18px 18px 18px;
-        height: 4px;
-        border-radius: 999px;
-        background: linear-gradient(90deg, var(--accent), var(--accent-2));
-        opacity: 0.75;
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 16px;
       }
 
-      .round {
-        display: inline-block;
-        padding: 6px 10px;
+      .score-card strong {
+        display: block;
+        font-size: 28px;
+        line-height: 1;
+        margin-bottom: 8px;
+      }
+
+      .score-card span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .rounds {
+        display: grid;
+        gap: 18px;
+      }
+
+      .round-card {
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(20, 34, 29, 0.08);
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 16px 44px rgba(20, 34, 29, 0.08);
+      }
+
+      .round-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .round-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
         border-radius: 999px;
-        background: rgba(15, 118, 110, 0.1);
+        background: var(--accent-soft);
         color: var(--accent);
         font-size: 13px;
         font-weight: 700;
         letter-spacing: 0.04em;
       }
 
-      .timeline-card h3 {
-        margin: 16px 0 10px;
-        font-size: 19px;
+      .round-title {
+        margin: 12px 0 0;
+        font-size: 24px;
       }
 
-      .timeline-card p {
-        margin: 0 0 12px;
+      .round-subtitle {
+        margin: 8px 0 0;
         color: var(--muted);
         line-height: 1.65;
       }
 
-      .score {
+      .score-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 9px 12px;
+        border-radius: 16px;
+        background: var(--amber-soft);
+        color: var(--amber);
         font-size: 13px;
-        color: var(--accent-2);
         font-weight: 700;
-        letter-spacing: 0.03em;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
       }
 
-      .model-grid {
+      .round-layout {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: 1.1fr 0.9fr;
         gap: 18px;
       }
 
-      .model-card {
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 24px;
-        padding: 22px;
+      .artifact {
+        background: rgba(18, 24, 22, 0.96);
+        color: #f5f0e7;
+        border-radius: 22px;
+        padding: 18px;
+        overflow: auto;
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
-      .model-card h3 {
-        margin: 0 0 10px;
-        font-size: 20px;
+      .artifact strong {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 240, 231, 0.62);
       }
 
-      .model-card p {
+      pre {
         margin: 0;
-        color: var(--muted);
-        line-height: 1.75;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-family: "SFMono-Regular", "IBM Plex Sans", monospace;
+        font-size: 13px;
+        line-height: 1.7;
       }
 
-      .process {
+      .feedback-card {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
+        gap: 14px;
       }
 
-      .process .mini-panel {
-        min-height: 220px;
+      .feedback-card .summary {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .tag.ok {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .tag.warn {
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .tag.bad {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .feedback-list {
+        margin: 0;
+        padding-left: 18px;
+        line-height: 1.72;
+        color: var(--muted);
+      }
+
+      .feedback-list li + li {
+        margin-top: 8px;
+      }
+
+      .dimension-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .dimension {
+        padding: 12px 14px;
+        border-radius: 18px;
+        background: rgba(255, 250, 243, 0.9);
+        border: 1px solid rgba(20, 34, 29, 0.06);
+      }
+
+      .dimension strong {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 14px;
+        margin-bottom: 8px;
+      }
+
+      .dimension span {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.65;
       }
 
       .footer {
@@ -434,25 +595,17 @@
       }
 
       code {
-        font-family: "IBM Plex Sans", monospace;
+        font-family: "SFMono-Regular", "IBM Plex Sans", monospace;
         background: rgba(20, 34, 29, 0.07);
         border-radius: 8px;
         padding: 2px 7px;
       }
 
-      @keyframes reveal {
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      @media (max-width: 1080px) {
+      @media (max-width: 1120px) {
         .hero-grid,
-        .thesis,
-        .timeline,
-        .model-grid,
-        .process {
+        .task-grid,
+        .round-layout,
+        .score-board {
           grid-template-columns: 1fr;
         }
 
@@ -463,17 +616,19 @@
 
       @media (max-width: 720px) {
         .page {
-          width: min(100vw - 24px, 1200px);
+          width: min(100vw - 24px, 1280px);
           padding-top: 18px;
         }
 
         .hero,
-        .section {
+        .section,
+        .round-card {
           padding: 22px;
         }
 
         .topline,
-        .footer {
+        .footer,
+        .round-top {
           flex-direction: column;
           align-items: flex-start;
         }
@@ -483,11 +638,12 @@
         }
 
         .hero p,
-        .quote p {
+        .pullquote p {
           font-size: 17px;
         }
 
-        .stat-strip {
+        .stat-strip,
+        .meta-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -496,213 +652,454 @@
   <body>
     <main class="page">
       <div class="topline">
-        <span><i class="dot"></i> AutoResearch Demo Landing Page</span>
-        <span>GaryBot / 五轮对抗式收敛 / 开放性任务优化</span>
+        <span><i class="dot"></i> AutoResearch Demo Archive</span>
+        <span>GaryBot / 命题 / 五轮输出 / 验证反馈</span>
       </div>
 
       <section class="hero">
         <div class="eyebrow">AutoResearch · Adversarial Convergence</div>
-        <h1>让开放性任务，持续逼近更优答案。</h1>
+        <h1>把一次真实五轮运行，完整摊开给你看。</h1>
         <p>
-          这不是一次普通的多轮润色，而是一场由
-          <strong>Worker</strong> 持续生成候选、由
-          <strong>Verifier</strong> 持续攻击剩余缺陷的对抗式收敛过程。
-          在开放题、优化题和演示型任务里，AutoResearch 的价值不在于第一轮就完美，
-          而在于把“还能更好一点”变成可见、可解释、可持续推进的循环。
+          这页不是概念介绍，而是一份可逐屏讲解的 demo 档案。
+          你可以直接看到命题是什么、每一轮究竟输出了什么、Verifier
+          又是如何一轮轮把问题压缩到一个稳定残余缺陷上的。
         </p>
 
         <div class="hero-grid">
           <div class="stat-strip">
             <div class="stat">
               <strong>5</strong>
-              <span>完整跑满五轮，展示真实收敛轨迹</span>
+              <span>完整跑满五轮，保留全过程输出与反馈</span>
             </div>
             <div class="stat">
               <strong>7.8</strong>
-              <span>最佳得分，来自第 5 轮候选</span>
+              <span>最佳得分出现在第 5 轮</span>
+            </div>
+            <div class="stat">
+              <strong>11</strong>
+              <span>评分维度，全部公开写进命题</span>
             </div>
             <div class="stat">
               <strong>1</strong>
-              <span>最终只剩 1 个稳定残余缺陷</span>
-            </div>
-            <div class="stat">
-              <strong>3</strong>
-              <span>证据行分别锚定 3 份仓库文档</span>
+              <span>最终只剩一个稳定残余缺陷：前置说明</span>
             </div>
           </div>
 
           <aside class="hero-card">
-            <h2>这次 Demo 任务</h2>
+            <h2>你在这页里会直接看到</h2>
             <ul>
-              <li>基于仓库文档，生成一张中文 AutoResearch 介绍卡片。</li>
-              <li>严格限定为 6 行，前缀、关键词、来源标记都要命中。</li>
-              <li>目标不是“有没有答案”，而是“能不能一轮轮更接近合格答案”。</li>
+              <li>完整任务目标与 Definition of Done。</li>
+              <li>每一轮 Worker 的实际候选输出。</li>
+              <li>每一轮 Verifier 的原始错误、打分与建议。</li>
+              <li>为什么这是一个开放性任务上的对抗式收敛过程。</li>
             </ul>
           </aside>
         </div>
+
+        <nav class="quick-nav" aria-label="Quick Navigation">
+          <a href="#brief">命题与约束</a>
+          <a href="#scores">五轮得分轨迹</a>
+          <a href="#rounds">逐轮输出与反馈</a>
+          <a href="#takeaway">演示话术落点</a>
+        </nav>
       </section>
 
       <div class="content">
-        <section class="section">
+        <section class="section" id="brief">
           <div class="section-header">
-            <h2>为什么这类任务特别适合 AutoResearch</h2>
-            <span>开放性任务的核心，不是对错，而是更优</span>
+            <h2>命题与完整约束</h2>
+            <span>真实 run_id: <code>ar_5802e9a8a81c4b39b144687f702320bb</code></span>
           </div>
-          <div class="thesis">
-            <article class="quote">
-              <strong>核心表达</strong>
-              <p>
-                AutoResearch 特别适合开放性、优化型问题。
-                因为这类问题通常没有一眼就写对的标准答案，
-                但非常适合通过一轮轮验证，把结果持续逼近更优版本。
-              </p>
-            </article>
-            <div class="mini-panel">
-              <h3>这次演示想证明什么</h3>
-              <ul>
-                <li>它不会只做“表面润色”，而是持续缩小剩余问题。</li>
-                <li>Verifier 会把失败原因压缩成更少、更具体的点。</li>
-                <li>即使没有最终通过，也能解释为什么还没过。</li>
+
+          <div class="task-grid">
+            <div class="panel">
+              <h3>任务目标</h3>
+              <div class="pullquote">
+                <strong>Task</strong>
+                <p>基于仓库文档产出一张适合演示的 AutoResearch 中文介绍卡片。</p>
+              </div>
+            </div>
+
+            <div class="panel">
+              <h3>运行元数据</h3>
+              <div class="meta-grid">
+                <div class="meta-item">
+                  <strong>状态</strong>
+                  <span>completed / budget_exhausted</span>
+                </div>
+                <div class="meta-item">
+                  <strong>Iteration Budget</strong>
+                  <span>5 / 5</span>
+                </div>
+                <div class="meta-item">
+                  <strong>输出类型</strong>
+                  <span>report</span>
+                </div>
+                <div class="meta-item">
+                  <strong>边界</strong>
+                  <span>不允许浏览；不允许改文件</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="task-grid" style="margin-top: 18px;">
+            <div class="detail-card">
+              <h3>Definition of Done</h3>
+              <ol class="prompt-list">
+                <li>只允许输出 6 行，不要任何额外说明。</li>
+                <li>六行前缀必须依次是：标题：、目标：、证据一：、证据二：、证据三：、收尾：。</li>
+                <li>标题行必须同时包含 GaryBot 和 AutoResearch。</li>
+                <li>目标行必须同时包含“五轮”和“持续收敛”。</li>
+                <li>证据一行必须提到 <code>garybot-gateway</code>，并明确它负责 HTTP API 或 MCP。</li>
+                <li>证据二行必须提到 <code>garybot-router</code>，并明确它负责线程或 transcript。</li>
+                <li>证据三行必须提到 <code>desktop/gary-desktop</code>，并明确它负责桌面端或 Mac App。</li>
+                <li>三条证据行都必须各自以不同的来源标记结尾，且只能从 <code>[docs/architecture.md]</code>、<code>[docs/agent/runtime-map.md]</code>、<code>[docs/auto-research.md]</code> 这三个来源里选。</li>
+                <li>收尾行必须同时包含“适合演示”和“更稳”。</li>
+                <li>全文必须是中文说明；除了 GaryBot、AutoResearch、代码标识和来源标记外，不允许额外英文句子、阿拉伯数字或项目符号。</li>
+                <li>语气必须像对外演示文案，不要写成开发说明。</li>
+              </ol>
+            </div>
+
+            <div class="detail-card">
+              <h3>为什么这个命题适合 Demo</h3>
+              <ul class="feedback-list">
+                <li>它不是只有唯一正确答案的确定性任务，而是一个明显带优化空间的开放题。</li>
+                <li>评分维度全都显式写出来，Verifier 很容易稳定给出结构化反馈。</li>
+                <li>内容质量和格式约束可以同时拉扯，天然适合演示“越来越接近，但还没完全通过”的过程。</li>
+                <li>这次真实运行最后就收敛到同一个剩余问题：正文前总会多出策略说明。</li>
               </ul>
             </div>
           </div>
         </section>
 
-        <section class="section">
+        <section class="section" id="scores">
           <div class="section-header">
-            <h2>五轮发生了什么</h2>
-            <span>从“有主体”到“只剩一个稳定缺陷”</span>
+            <h2>五轮得分轨迹</h2>
+            <span>前两轮 verifier 甚至还没稳定输出结构化 JSON；第 3 轮开始进入可解释收敛</span>
           </div>
-          <div class="timeline">
-            <article class="timeline-card">
-              <span class="round">Round 1</span>
-              <h3>先把主体搭出来</h3>
-              <p>
-                第一轮已经写出了 6 行正文骨架，三条证据也基本抓对了对象。
-                但它在正文前面加了解释和分隔线，先天违反格式要求。
-              </p>
-              <div class="score">Verifier 结果：JSON 解析失败，但暴露了前置说明问题</div>
-            </article>
-
-            <article class="timeline-card">
-              <span class="round">Round 2</span>
-              <h3>内容更完整，约束仍未收紧</h3>
-              <p>
-                第二轮把技术归纳写得更清楚，证据感更强，已经像一张正式介绍卡片。
-                但它依然没舍得删掉前置说明。
-              </p>
-              <div class="score">Verifier 结果：再次解析失败，说明问题仍在同一处</div>
-            </article>
-
-            <article class="timeline-card">
-              <span class="round">Round 3</span>
-              <h3>进入可解释收敛</h3>
-              <p>
-                从这一轮开始，Verifier 给出了结构化打分。
-                它明确指出：正文 6 行几乎全对，唯一硬伤就是前面多出的“策略说明”。
-              </p>
-              <div class="score">Overall Score：7.5 / 10</div>
-            </article>
-
-            <article class="timeline-card">
-              <span class="round">Round 4</span>
-              <h3>正文继续变好，坏习惯没消失</h3>
-              <p>
-                标题、证据与收尾都更成熟，整体文案感更强。
-                但它还是在正式答案前写了一段解释，并夹带了英文和数字。
-              </p>
-              <div class="score">Overall Score：7.7 / 10</div>
-            </article>
-
-            <article class="timeline-card">
-              <span class="round">Round 5</span>
-              <h3>最接近通过的一轮</h3>
-              <p>
-                第五轮的正文已经是最佳版本，收尾尤其更适合演示场景。
-                但它仍然保留了“策略：”前缀，最终只剩这一个稳定残余缺陷。
-              </p>
-              <div class="score">Overall Score：7.8 / 10</div>
-            </article>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <h2>这不是普通润色，而是对抗式收敛</h2>
-            <span>Worker 负责逼近，Verifier 负责施压</span>
-          </div>
-          <div class="model-grid">
-            <article class="model-card">
-              <h3>Worker</h3>
-              <p>
-                持续生成更强候选，不是机械改字，而是尝试命中结构、证据、语气和约束。
-                每一轮都在问：我能不能更像最终答案一点？
-              </p>
-            </article>
-            <article class="model-card">
-              <h3>Verifier</h3>
-              <p>
-                像一个专门挑漏洞的裁判。它不会因为答案看起来“差不多”就放行，
-                而是持续攻击剩余缺陷，直到问题被压缩成最具体的残留点。
-              </p>
-            </article>
-            <article class="model-card">
-              <h3>结果</h3>
-              <p>
-                对开放题来说，价值不在第一轮就完美，
-                而在于把“还能更好一点”变成有方向、有反馈、有边界的推进过程。
-              </p>
-            </article>
-          </div>
-        </section>
-
-        <section class="section">
-          <div class="section-header">
-            <h2>为什么它对开放性和优化型问题更有价值</h2>
-            <span>不是找唯一正确答案，而是逼近更优答案</span>
-          </div>
-          <div class="process">
-            <div class="mini-panel">
-              <h3>确定性任务</h3>
-              <p>
-                更像一次性验收。通过就是通过，失败通常意味着“哪里错了”。
-                在这类任务里，多轮循环的价值存在，但不一定最突出。
-              </p>
+          <div class="score-board">
+            <div class="score-card">
+              <h3>第 1 轮</h3>
+              <strong>Parse Error</strong>
+              <span>Verifier 原始错误：<code>expected ',' or '}' at line 1 column 200</code></span>
             </div>
-            <div class="mini-panel">
-              <h3>开放性任务</h3>
-              <p>
-                更像持续优化。问题往往不是“对不对”，而是“能不能更好”。
-                AutoResearch 的价值正是在这里最明显：它能把更优解的逼近过程变得可视、可解释、可重复。
-              </p>
+            <div class="score-card">
+              <h3>第 2 轮</h3>
+              <strong>Parse Error</strong>
+              <span>Verifier 原始错误：<code>expected ',' or '}' at line 1 column 228</code></span>
+            </div>
+            <div class="score-card">
+              <h3>第 3 轮</h3>
+              <strong>7.5</strong>
+              <span>主体六行几乎全对，首次明确指出唯一硬伤就是前置说明与分隔线。</span>
+            </div>
+            <div class="score-card">
+              <h3>第 4 轮</h3>
+              <strong>7.7</strong>
+              <span>正文继续变强，但依旧在答案前加入解释，并夹带英文和数字。</span>
+            </div>
+            <div class="score-card">
+              <h3>第 5 轮</h3>
+              <strong>7.8</strong>
+              <span>最佳候选出现，但仍未删干净前置“策略”说明，最终预算耗尽。</span>
             </div>
           </div>
         </section>
 
-        <section class="section">
+        <section class="section" id="rounds">
           <div class="section-header">
-            <h2>这次 Demo 的一句话总结</h2>
-            <span>把讲法留给现场，把结构留给系统</span>
+            <h2>逐轮输出与 Verifier 反馈</h2>
+            <span>每轮都保留了真实候选输出；第 3 至第 5 轮保留了结构化评价</span>
           </div>
-          <article class="quote">
-            <strong>Ready To Present</strong>
-            <p>
-              AutoResearch 的核心不是自动多跑几轮，
-              而是把生成与验证放进一个对抗式循环里。
-              生成端不断逼近目标，验证端不断攻击剩余缺陷。
-              最后得到的不是“看起来更像对”，而是“能解释为什么还没过，或者为什么终于过了”。
-            </p>
-          </article>
+
+          <div class="rounds">
+            <article class="round-card">
+              <div class="round-top">
+                <div>
+                  <span class="round-badge">Round 1</span>
+                  <h3 class="round-title">先把 6 行主体搭出来</h3>
+                  <p class="round-subtitle">
+                    第一轮已经生成了完整卡片骨架，但在正文前加了说明文字和分隔线。内容有了，边界没守住。
+                  </p>
+                </div>
+                <div class="score-pill">Verifier: Parse Error</div>
+              </div>
+              <div class="round-layout">
+                <div class="artifact">
+                  <strong>Round 1 Output</strong>
+<pre>直接输出符合所有评分维度的六行卡片，不做额外叙述。
+
+---
+
+标题：GaryBot AutoResearch——智能自动研究新体验
+目标：以五轮迭代驱动持续收敛，让复杂研究课题自动完成
+证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，是研究任务的统一调度入口 [docs/architecture.md]
+证据二：`garybot-router` 负责线程状态与 transcript 管理，确保每轮推进有据可查 [docs/agent/runtime-map.md]
+证据三：`desktop/gary-desktop` 提供桌面端 Mac App 界面，让研究进展实时可见 [docs/auto-research.md]
+收尾：整体架构经过充分验证，适合演示，随着迭代积累答案质量更稳</pre>
+                </div>
+                <div class="feedback-card">
+                  <h3>Verifier 反馈</h3>
+                  <p class="summary">
+                    这一轮 verifier 连结构化 verdict 都没稳定产出，直接报了解析错误。
+                    但从候选本身已经能看出第一个系统性问题：它总爱在正式答案前多写一段说明。
+                  </p>
+                  <div class="tag-row">
+                    <span class="tag bad">原始错误：expected ',' or '}' at line 1 column 200</span>
+                    <span class="tag warn">内容主体已成形</span>
+                    <span class="tag bad">前置说明已越界</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="round-card">
+              <div class="round-top">
+                <div>
+                  <span class="round-badge">Round 2</span>
+                  <h3 class="round-title">内容更完整，但还是改不掉“先解释一下”</h3>
+                  <p class="round-subtitle">
+                    第二轮把三条证据讲得更像“基于文档的归纳”，整体更像正式介绍卡片，但依然在正文前加了导语和分隔线。
+                  </p>
+                </div>
+                <div class="score-pill">Verifier: Parse Error</div>
+              </div>
+              <div class="round-layout">
+                <div class="artifact">
+                  <strong>Round 2 Output</strong>
+<pre>从两份文档中提取了关键边界：`garybot-gateway` 负责 HTTP API + MCP 路由层（架构文档明确），`garybot-router` 承载消息台账（内存备注确认），`desktop/gary-desktop` 是桌面端 Mac App 入口。三条证据来源各不相同，严格按评分维度组装。
+
+---
+
+标题：GaryBot AutoResearch——首个面向用户的智能自动研究功能
+目标：以五轮迭代推动结果持续收敛，让复杂研究任务自动跑到通过为止
+证据一：`garybot-gateway` 统一承接 HTTP API 与 MCP 请求，是所有研究任务的调度入口 [docs/architecture.md]
+证据二：`garybot-router` 负责线程台账与对话历史的持久化存储和路由分发 [docs/agent/runtime-map.md]
+证据三：`desktop/gary-desktop` 作为桌面端 Mac App，提供任务创建、迭代进度与最终结果的完整视图 [docs/auto-research.md]
+收尾：当前架构已通过内部验证，适合演示，随迭代覆盖面扩大后将更稳</pre>
+                </div>
+                <div class="feedback-card">
+                  <h3>Verifier 反馈</h3>
+                  <p class="summary">
+                    第二轮 verifier 依旧没有给出结构化 JSON，说明校验链路前半段还在抖。
+                    但从候选能看出一个重要趋势：它不是在乱改，而是在逐步强化证据表达。
+                  </p>
+                  <div class="tag-row">
+                    <span class="tag bad">原始错误：expected ',' or '}' at line 1 column 228</span>
+                    <span class="tag ok">证据描述更完整</span>
+                    <span class="tag bad">前置说明仍存在</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="round-card">
+              <div class="round-top">
+                <div>
+                  <span class="round-badge">Round 3</span>
+                  <h3 class="round-title">真正进入可解释收敛</h3>
+                  <p class="round-subtitle">
+                    第三轮开始，Verifier 首次给出可读的结构化 verdict。
+                    这时系统终于能明确告诉我们：不是整体不行，而是只差删掉前置说明。
+                  </p>
+                </div>
+                <div class="score-pill">Overall Score: 7.5 / 10</div>
+              </div>
+              <div class="round-layout">
+                <div class="artifact">
+                  <strong>Round 3 Output</strong>
+<pre>本轮策略：前两候选在证据行来源分配或结构上有疏漏，本次严格逐条对照所有十条维度，确保每行精准达标，语气统一偏向对外演示文案。
+
+---
+
+标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
+目标：以五轮迭代不断优化方向，驱动研究结果持续收敛至最佳答案
+证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，为研究任务提供统一调度入口 [docs/architecture.md]
+证据二：`garybot-router` 负责线程与 transcript 全程管理，保障研究过程完整可回溯 [docs/agent/runtime-map.md]
+证据三：`desktop/gary-desktop` 打造桌面端 Mac App 体验，让研究成果随手可见 [docs/auto-research.md]
+收尾：整体架构清晰、流程自动，适合演示场合，让您的展示更稳、更有说服力</pre>
+                </div>
+                <div class="feedback-card">
+                  <h3>Verifier 反馈</h3>
+                  <div class="tag-row">
+                    <span class="tag warn">总分：7.5</span>
+                    <span class="tag bad">唯一硬伤：前置说明与分隔线</span>
+                    <span class="tag ok">六行主体几乎全中</span>
+                  </div>
+                  <ul class="feedback-list">
+                    <li>强项：六行主体对结构性维度几乎全部命中，三条证据来源分配正确，文案语气已经很像 demo 卡片。</li>
+                    <li>弱项：<strong>“输出前包含『本轮策略：……』段落及分隔线”</strong>，直接违反“只允许输出六行，不要任何额外说明”。</li>
+                    <li>建议：<strong>“删除所有前置策略说明和分隔线，直接输出六行正文。”</strong></li>
+                  </ul>
+                  <div class="dimension-grid">
+                    <div class="dimension">
+                      <strong><span>只输出 6 行，无额外说明</span><span>1.0 / 10</span></strong>
+                      <span>输出前有“本轮策略”段落和“---”，六行主体之外存在额外内容。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>六行前缀顺序</span><span>10 / 10</span></strong>
+                      <span>标题、目标、证据一、证据二、证据三、收尾，顺序完全正确。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>收尾包含“适合演示”和“更稳”</span><span>10 / 10</span></strong>
+                      <span>收尾句准确命中两个关键词，并保持演示文案语气。</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="round-card">
+              <div class="round-top">
+                <div>
+                  <span class="round-badge">Round 4</span>
+                  <h3 class="round-title">正文更强了，但坏习惯没有消失</h3>
+                  <p class="round-subtitle">
+                    第四轮已经沿着上一轮 feedback 去修正文细节，得分也涨了。
+                    但它依旧在答案前加了解释，而且这次还把 <code>Candidate #3</code> 带进来了。
+                  </p>
+                </div>
+                <div class="score-pill">Overall Score: 7.7 / 10</div>
+              </div>
+              <div class="round-layout">
+                <div class="artifact">
+                  <strong>Round 4 Output</strong>
+<pre>本轮聚焦前次失败根源：Candidate #3 在六行正文之前插入了"本轮策略"段落，直接违反"只允许输出六行"要求。本次严格剔除所有前置说明，确保候选输出本身仅含六行正文，且来源标记三选三不重复。
+
+---
+
+标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
+目标：以五轮迭代不断优化研究方向，驱动结论持续收敛至最佳答案
+证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，是研究任务的统一调度入口 [docs/architecture.md]
+证据二：`garybot-router` 负责线程状态与完整 transcript 管理，确保每轮研究上下文贯通 [docs/agent/runtime-map.md]
+证据三：`desktop/gary-desktop` 作为桌面端 Mac App，将研究进展实时呈现于用户面前 [docs/auto-research.md]
+收尾：架构清晰、模块完备，适合演示的同时让每次研究结果更稳</pre>
+                </div>
+                <div class="feedback-card">
+                  <h3>Verifier 反馈</h3>
+                  <div class="tag-row">
+                    <span class="tag warn">总分：7.7</span>
+                    <span class="tag ok">正文继续提升</span>
+                    <span class="tag bad">前置说明 + 英文数字继续违规</span>
+                  </div>
+                  <ul class="feedback-list">
+                    <li>强项：目标行、三条证据和收尾都更成熟，技术描述更稳，语气也更像发布型文案。</li>
+                    <li>弱项一：<strong>仍然在六行正文前插入前置说明段落</strong>，根本缺陷与第 3 轮完全相同。</li>
+                    <li>弱项二：前置说明里出现了 <code>Candidate #3</code>，额外触发了英文和阿拉伯数字违规。</li>
+                    <li>建议：<strong>“版本迭代说明应在候选提交的外部元数据中体现，绝不并入候选正文。”</strong></li>
+                  </ul>
+                  <div class="dimension-grid">
+                    <div class="dimension">
+                      <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
+                      <span>前置说明还在，所以虽然比上一轮更明确，但依旧直接冲突。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>全文中文，无多余英文/数字/符号</span><span>7.0 / 10</span></strong>
+                      <span>正文合规，但前置段落里的 “Candidate #3” 和 “---” 让整体再度失分。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>与当前最佳对比</span><span>vs #3</span></strong>
+                      <span>正文略优于第 3 轮，但根本缺陷未修复，所以只是小幅涨分，没实现质变。</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="round-card">
+              <div class="round-top">
+                <div>
+                  <span class="round-badge">Round 5</span>
+                  <h3 class="round-title">最好的正文，最稳定的残余问题</h3>
+                  <p class="round-subtitle">
+                    第五轮是全场最佳候选，正文质量已经非常接近成品。
+                    但它依然在最前面写了 <code>**策略：**</code>，于是整轮还是没过。
+                  </p>
+                </div>
+                <div class="score-pill">Overall Score: 7.8 / 10</div>
+              </div>
+              <div class="round-layout">
+                <div class="artifact">
+                  <strong>Round 5 Output</strong>
+<pre>**策略：** 完全剔除前置说明段落，直接输出六行正文。来源标记三行各取不同文档，语气统一为对外演示文案。
+
+---
+
+标题：GaryBot AutoResearch——全自动智能研究，一键直达深度洞察
+目标：以五轮迭代不断优化研究方向，驱动结论持续收敛至最佳答案
+证据一：`garybot-gateway` 承担 HTTP API 与 MCP 对接，为研究任务提供统一调度入口 [docs/architecture.md]
+证据二：`garybot-router` 负责线程管理与 transcript 持久化，确保研究过程完整可追溯 [docs/agent/runtime-map.md]
+证据三：`desktop/gary-desktop` 作为桌面端 Mac App，让研究成果随时触手可及 [docs/auto-research.md]
+收尾：多轮自动迭代让研究深度大幅提升，适合演示场景，结论更稳、更具说服力</pre>
+                </div>
+                <div class="feedback-card">
+                  <h3>Verifier 反馈</h3>
+                  <div class="tag-row">
+                    <span class="tag warn">总分：7.8</span>
+                    <span class="tag ok">最佳正文质量</span>
+                    <span class="tag bad">仍未删除前置“策略”</span>
+                  </div>
+                  <ul class="feedback-list">
+                    <li>强项：六行正文的关键词覆盖、前缀顺序、来源标记全部正确，收尾的演示文案感比前一轮还更强。</li>
+                    <li>弱项一：<strong>“正文前的策略说明段落直接违反维度1硬性要求。”</strong></li>
+                    <li>弱项二：Verifier 明确指出它“自称完全剔除前置说明，却又写出了前置说明”，这是最有戏剧性的对抗点。</li>
+                    <li>建议：<strong>“下一轮必须将六行正文作为唯一输出，彻底删除策略段落和分隔线。”</strong></li>
+                  </ul>
+                  <div class="dimension-grid">
+                    <div class="dimension">
+                      <strong><span>只允许输出 6 行</span><span>2.0 / 10</span></strong>
+                      <span>唯一没有真正收敛成功的核心维度，所有失败都集中在这里。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>语气像对外演示文案</span><span>9.5 / 10</span></strong>
+                      <span>正文演示感最好，尤其收尾“结论更稳、更具说服力”明显优于前面几轮。</span>
+                    </div>
+                    <div class="dimension">
+                      <strong><span>与当前最佳对比</span><span>vs #4</span></strong>
+                      <span>正文略优于第 4 轮，但失败模式毫无变化，说明系统已把问题收敛到一个稳定单点。</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="takeaway">
+          <div class="section-header">
+            <h2>这页最终想帮你讲清楚什么</h2>
+            <span>不是“它会不会做”，而是“它如何逼近更优”</span>
+          </div>
+          <div class="task-grid">
+            <div class="pullquote">
+              <strong>对外表达</strong>
+              <p>
+                AutoResearch 不是只适合判断题，它更适合那些需要反复打磨、逐步逼近更优结果的任务。
+                在这类开放性问题里，生成端不断逼近目标，验证端不断攻击剩余缺陷，
+                最后得到的是一个可以解释的收敛过程，而不只是一个看起来“差不多”的答案。
+              </p>
+            </div>
+            <div class="detail-card">
+              <h3>这次 Demo 的一句话落点</h3>
+              <ul class="feedback-list">
+                <li>前两轮先把答案主体做出来。</li>
+                <li>第三轮开始进入可解释收敛。</li>
+                <li>第四、五轮不是乱改，而是围绕同一个残余问题持续对抗。</li>
+                <li>最后失败也不是整体不行，而是只差一个明确到不能更明确的格式错误。</li>
+              </ul>
+            </div>
+          </div>
         </section>
       </div>
 
       <footer class="footer">
         <div>
           页面主题：<code>AutoResearch 对抗式收敛 Demo</code><br />
-          内容基于一次真实五轮运行的演示总结。
+          本页展示命题、五轮真实输出与逐轮 Verifier 反馈，不再只讲概念。
         </div>
         <a class="cta" href="https://github.com/Pyiner/GaryBot" target="_blank" rel="noreferrer">
-          查看仓库
+          查看 GaryBot 仓库
         </a>
       </footer>
     </main>
