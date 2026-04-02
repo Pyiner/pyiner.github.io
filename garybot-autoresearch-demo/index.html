@@ -1,37 +1,39 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AutoResearch MCP Verdict Demo</title>
+    <title>GaryBot Auto Research | 流程、数据模型与提示词</title>
     <meta
       name="description"
-      content="展示 AutoResearch 在修复 verifier MCP verdict 链路后，如何用一次真实五轮运行持续逼近更优答案。"
+      content="把 GaryBot Auto Research 当前实现里的流程、数据模型与模型提示词设计，整理成一页能直接发链接的网页。"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap"
       rel="stylesheet"
     />
     <style>
       :root {
-        --bg: #f4efe7;
-        --paper: rgba(255, 251, 245, 0.84);
-        --paper-strong: #fffaf3;
-        --ink: #14221d;
-        --muted: #5a655e;
-        --line: rgba(20, 34, 29, 0.1);
+        --bg: #f6f1e8;
+        --bg-2: #eee5d5;
+        --paper: rgba(255, 251, 243, 0.86);
+        --paper-strong: #fffaf1;
+        --ink: #17312a;
+        --muted: #5e6d67;
+        --line: rgba(23, 49, 42, 0.1);
         --accent: #0f766e;
         --accent-soft: rgba(15, 118, 110, 0.1);
-        --amber: #b45309;
-        --amber-soft: rgba(180, 83, 9, 0.12);
-        --blue: #164e63;
-        --blue-soft: rgba(22, 78, 99, 0.1);
-        --danger: #9a3412;
-        --danger-soft: rgba(154, 52, 18, 0.1);
-        --shadow: 0 24px 60px rgba(20, 34, 29, 0.12);
-        --radius: 28px;
+        --orange: #d9732f;
+        --orange-soft: rgba(217, 115, 47, 0.12);
+        --violet: #7c3aed;
+        --violet-soft: rgba(124, 58, 237, 0.12);
+        --shadow: 0 24px 60px rgba(26, 38, 34, 0.12);
+        --radius-xl: 34px;
+        --radius-lg: 26px;
+        --radius-md: 18px;
+        --radius-sm: 12px;
       }
 
       * {
@@ -44,12 +46,12 @@
 
       body {
         margin: 0;
-        font-family: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", sans-serif;
+        font-family: "IBM Plex Sans", "Avenir Next", "PingFang SC", sans-serif;
         color: var(--ink);
         background:
           radial-gradient(circle at top left, rgba(15, 118, 110, 0.16), transparent 28%),
-          radial-gradient(circle at top right, rgba(180, 83, 9, 0.12), transparent 24%),
-          linear-gradient(180deg, #f7f1e8 0%, #f2ece3 46%, #efe9df 100%);
+          radial-gradient(circle at 90% 12%, rgba(217, 115, 47, 0.14), transparent 24%),
+          linear-gradient(180deg, #f8f4ec 0%, var(--bg) 50%, var(--bg-2) 100%);
         min-height: 100vh;
       }
 
@@ -59,16 +61,26 @@
         inset: 0;
         pointer-events: none;
         background-image:
-          linear-gradient(rgba(20, 34, 29, 0.05) 1px, transparent 1px),
-          linear-gradient(90deg, rgba(20, 34, 29, 0.05) 1px, transparent 1px);
-        background-size: 56px 56px;
+          linear-gradient(rgba(23, 49, 42, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(23, 49, 42, 0.05) 1px, transparent 1px);
+        background-size: 60px 60px;
         mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent 78%);
       }
 
+      a {
+        color: inherit;
+      }
+
+      code,
+      pre,
+      .mono {
+        font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace;
+      }
+
       .page {
-        width: min(1280px, calc(100vw - 40px));
+        width: min(1420px, calc(100vw - 32px));
         margin: 0 auto;
-        padding: 28px 0 72px;
+        padding: 24px 0 72px;
       }
 
       .topline {
@@ -76,10 +88,10 @@
         justify-content: space-between;
         align-items: center;
         gap: 16px;
-        margin-bottom: 26px;
+        margin-bottom: 22px;
         color: var(--muted);
-        font-size: 14px;
-        letter-spacing: 0.04em;
+        font-size: 13px;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
       }
 
@@ -93,30 +105,32 @@
         width: 9px;
         height: 9px;
         border-radius: 999px;
-        background: linear-gradient(135deg, var(--accent), var(--amber));
+        background: linear-gradient(135deg, var(--accent), var(--orange));
         box-shadow: 0 0 0 6px rgba(15, 118, 110, 0.12);
       }
 
       .hero {
         position: relative;
         overflow: hidden;
-        background: linear-gradient(135deg, rgba(255, 250, 243, 0.94), rgba(248, 242, 232, 0.9));
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 36px;
+        padding: 38px;
+        border-radius: 38px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background:
+          linear-gradient(135deg, rgba(255, 250, 241, 0.96), rgba(244, 235, 220, 0.88)),
+          var(--paper);
         box-shadow: var(--shadow);
-        padding: 42px;
       }
 
       .hero::after {
         content: "";
         position: absolute;
-        right: -90px;
-        top: -90px;
-        width: 320px;
-        height: 320px;
-        border-radius: 999px;
+        right: -120px;
+        top: -100px;
+        width: 360px;
+        height: 360px;
+        border-radius: 50%;
         background:
-          radial-gradient(circle, rgba(180, 83, 9, 0.24) 0%, rgba(180, 83, 9, 0.06) 38%, transparent 70%);
+          radial-gradient(circle, rgba(15, 118, 110, 0.2), rgba(15, 118, 110, 0.04) 55%, transparent 72%);
         pointer-events: none;
       }
 
@@ -124,1244 +138,1079 @@
         display: inline-flex;
         align-items: center;
         gap: 10px;
-        padding: 9px 14px;
+        padding: 8px 14px;
         border-radius: 999px;
+        border: 1px solid rgba(15, 118, 110, 0.18);
         background: var(--accent-soft);
         color: var(--accent);
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
       }
 
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        gap: 28px;
+        align-items: end;
+      }
+
       h1 {
-        margin: 18px 0 18px;
-        font-family: "Noto Serif SC", serif;
-        font-size: clamp(40px, 6vw, 74px);
-        line-height: 1.03;
-        letter-spacing: -0.04em;
-        max-width: 10.5em;
+        margin: 18px 0 14px;
+        font-size: clamp(42px, 6vw, 82px);
+        line-height: 0.94;
+        letter-spacing: -0.05em;
+        font-weight: 700;
+      }
+
+      h1 em {
+        display: block;
+        margin-top: 10px;
+        color: var(--orange);
+        font-family: "Instrument Serif", Georgia, serif;
+        font-style: italic;
+        font-weight: 400;
       }
 
       .hero p {
         margin: 0;
-        max-width: 760px;
-        font-size: 19px;
-        line-height: 1.7;
-        color: #24322b;
+        max-width: 860px;
+        color: #24332d;
+        font-size: 18px;
+        line-height: 1.75;
       }
 
-      .hero-grid {
+      .stats {
         display: grid;
-        grid-template-columns: 1.5fr 1fr;
-        gap: 28px;
-        margin-top: 34px;
-      }
-
-      .stat-strip {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
       }
 
-      .stat,
-      .hero-card,
-      .section,
-      .panel,
-      .round-card,
-      .pullquote,
-      .detail-card,
-      .feedback-card {
-        backdrop-filter: blur(12px);
-      }
-
       .stat {
-        background: rgba(255, 255, 255, 0.62);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 22px;
         padding: 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+        backdrop-filter: blur(8px);
       }
 
       .stat strong {
         display: block;
-        font-size: 30px;
-        line-height: 1;
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
       .stat span {
+        display: block;
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: -0.04em;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        gap: 24px;
+        margin-top: 26px;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+        padding: 22px;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 252, 245, 0.78);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 16px 38px rgba(34, 46, 42, 0.08);
+      }
+
+      .sidebar h2 {
+        margin: 0 0 12px;
         color: var(--muted);
-        font-size: 14px;
-        line-height: 1.5;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
       }
 
-      .hero-card {
-        background: linear-gradient(180deg, rgba(13, 33, 30, 0.95), rgba(18, 46, 41, 0.91));
-        color: #f8f2e9;
-        border-radius: 28px;
-        padding: 24px;
-        position: relative;
-        overflow: hidden;
+      .sidebar nav {
+        display: grid;
+        gap: 8px;
       }
 
-      .hero-card::before {
-        content: "";
-        position: absolute;
-        inset: 0;
-        background:
-          linear-gradient(140deg, rgba(255, 255, 255, 0.06), transparent 36%),
-          radial-gradient(circle at right top, rgba(15, 118, 110, 0.28), transparent 42%);
-        pointer-events: none;
-      }
-
-      .hero-card h2 {
-        margin: 0 0 14px;
-        font-size: 20px;
-      }
-
-      .hero-card ul {
-        margin: 0;
-        padding-left: 18px;
-        line-height: 1.7;
-        color: rgba(248, 242, 233, 0.86);
-      }
-
-      .quick-nav {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-top: 24px;
-      }
-
-      .quick-nav a {
-        display: inline-flex;
-        align-items: center;
-        padding: 11px 14px;
-        border-radius: 999px;
+      .sidebar a {
+        padding: 10px 12px;
+        border-radius: 12px;
         text-decoration: none;
-        color: var(--ink);
-        background: rgba(255, 255, 255, 0.65);
-        border: 1px solid rgba(20, 34, 29, 0.08);
         font-size: 14px;
-        font-weight: 600;
+      }
+
+      .sidebar a:hover,
+      .sidebar a:focus-visible {
+        background: rgba(15, 118, 110, 0.08);
+        outline: none;
+      }
+
+      .sidebar .note {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.75;
       }
 
       .content {
         display: grid;
         gap: 22px;
-        margin-top: 24px;
       }
 
       .section {
-        position: relative;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
         padding: 28px;
-        overflow: hidden;
+        border-radius: var(--radius-xl);
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: var(--paper);
+        box-shadow: 0 12px 30px rgba(34, 46, 42, 0.06);
       }
 
-      .section::before {
-        content: "";
-        position: absolute;
-        inset: 0 auto 0 0;
-        width: 4px;
-        background: linear-gradient(180deg, var(--accent), var(--amber));
-      }
-
-      .section-header {
+      .section-head {
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
-        gap: 16px;
-        margin-bottom: 22px;
-      }
-
-      .section-header h2 {
-        margin: 0;
-        font-size: 24px;
-      }
-
-      .section-header span {
-        color: var(--muted);
-        font-size: 14px;
-      }
-
-      .task-grid {
-        display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
+        align-items: end;
         gap: 18px;
+        margin-bottom: 16px;
       }
 
-      .panel,
-      .detail-card,
-      .feedback-card {
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 24px;
-        padding: 22px;
+      .section h2 {
+        margin: 0 0 10px;
+        font-size: 32px;
+        letter-spacing: -0.04em;
       }
 
-      .panel h3,
-      .detail-card h3,
-      .feedback-card h3 {
-        margin: 0 0 14px;
-        font-size: 18px;
-      }
-
-      .meta-grid {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px;
-      }
-
-      .meta-item {
-        padding: 14px;
-        border-radius: 18px;
-        background: rgba(255, 250, 243, 0.9);
-        border: 1px solid rgba(20, 34, 29, 0.06);
-      }
-
-      .meta-item strong {
-        display: block;
-        font-size: 12px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 8px;
-      }
-
-      .meta-item span {
-        font-size: 15px;
-        line-height: 1.55;
-      }
-
-      .prompt-list {
+      .section-head p,
+      .section > p {
         margin: 0;
-        padding-left: 18px;
-        line-height: 1.72;
         color: var(--muted);
+        line-height: 1.8;
       }
 
-      .prompt-list li + li {
-        margin-top: 8px;
-      }
-
-      .pullquote {
-        background: var(--paper-strong);
-        border-radius: 24px;
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        padding: 24px;
-      }
-
-      .pullquote strong {
-        display: block;
-        margin-bottom: 14px;
-        color: var(--blue);
-        font-size: 13px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .pullquote p {
-        margin: 0;
-        font-size: 20px;
-        line-height: 1.72;
-      }
-
-      .score-board {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 14px;
-      }
-
-      .score-card {
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 22px;
-        padding: 18px;
-      }
-
-      .score-card h3 {
-        margin: 0 0 8px;
-        font-size: 16px;
-      }
-
-      .score-card strong {
-        display: block;
-        font-size: 28px;
-        line-height: 1;
-        margin-bottom: 8px;
-      }
-
-      .score-card span {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      .trajectory {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        gap: 14px;
-        margin-top: 18px;
-      }
-
-      .trajectory-step {
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 22px;
-        padding: 18px;
-      }
-
-      .trajectory-step.error {
-        background: rgba(154, 52, 18, 0.06);
-        border-color: rgba(154, 52, 18, 0.12);
-      }
-
-      .trajectory-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 12px;
-        margin-bottom: 10px;
-      }
-
-      .trajectory-top strong {
-        font-size: 15px;
-      }
-
-      .trajectory-value {
-        font-size: 18px;
-        font-weight: 700;
-        color: var(--blue);
-      }
-
-      .trajectory-step.error .trajectory-value {
-        color: var(--danger);
-      }
-
-      .trajectory-track {
-        height: 10px;
-        border-radius: 999px;
-        background: rgba(20, 34, 29, 0.08);
-        overflow: hidden;
-        margin-bottom: 10px;
-      }
-
-      .trajectory-fill {
-        width: var(--pct, 0%);
-        height: 100%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, var(--accent), var(--amber));
-      }
-
-      .trajectory-step.error .trajectory-fill {
-        background: linear-gradient(90deg, #c2410c, #ea580c);
-      }
-
-      .trajectory-note {
-        color: var(--muted);
-        font-size: 13px;
-        line-height: 1.55;
-      }
-
-      .focus-strip {
-        display: grid;
-        grid-template-columns: 1.1fr 1fr 1fr;
-        gap: 14px;
-        margin-top: 18px;
-      }
-
-      .focus-card {
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 22px;
-        padding: 18px;
-      }
-
-      .focus-card h3 {
-        margin: 0 0 12px;
-        font-size: 17px;
-      }
-
-      .focus-card p,
-      .focus-card li {
-        color: var(--muted);
-        line-height: 1.68;
-      }
-
-      .focus-card ul {
-        margin: 0;
-        padding-left: 18px;
-      }
-
-      .rounds {
-        display: grid;
-        gap: 18px;
-      }
-
-      .round-card {
-        background: rgba(255, 255, 255, 0.72);
-        border: 1px solid rgba(20, 34, 29, 0.08);
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 16px 44px rgba(20, 34, 29, 0.08);
-      }
-
-      .round-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        margin-bottom: 18px;
-      }
-
-      .round-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 7px 12px;
-        border-radius: 999px;
-        background: var(--accent-soft);
-        color: var(--accent);
-        font-size: 13px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-      }
-
-      .round-title {
-        margin: 12px 0 0;
-        font-size: 24px;
-      }
-
-      .round-subtitle {
-        margin: 8px 0 0;
-        color: var(--muted);
-        line-height: 1.65;
-      }
-
-      .score-pill {
-        display: inline-flex;
-        align-items: center;
-        padding: 9px 12px;
-        border-radius: 16px;
-        background: var(--amber-soft);
-        color: var(--amber);
-        font-size: 13px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .round-layout {
-        display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
-        gap: 18px;
-      }
-
-      .artifact {
-        background: rgba(18, 24, 22, 0.96);
-        color: #f5f0e7;
-        border-radius: 22px;
-        padding: 18px;
-        overflow: auto;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .artifact strong {
-        display: block;
-        margin-bottom: 12px;
-        font-size: 13px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgba(245, 240, 231, 0.62);
-      }
-
-      pre {
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-        font-family: "SFMono-Regular", "IBM Plex Sans", monospace;
-        font-size: 13px;
-        line-height: 1.7;
-      }
-
-      .feedback-card {
-        display: grid;
-        gap: 14px;
-      }
-
-      .feedback-card .summary {
-        color: var(--muted);
-        line-height: 1.7;
-      }
-
-      .tag-row {
+      .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
+        margin-top: 18px;
       }
 
-      .tag {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 10px;
+      .chip {
+        padding: 8px 12px;
         border-radius: 999px;
-        font-size: 12px;
+        border: 1px solid rgba(23, 49, 42, 0.1);
+        background: rgba(255, 255, 255, 0.66);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .chip.accent {
+        color: var(--accent);
+        border-color: rgba(15, 118, 110, 0.18);
+        background: var(--accent-soft);
+      }
+
+      .chip.orange {
+        color: var(--orange);
+        border-color: rgba(217, 115, 47, 0.2);
+        background: var(--orange-soft);
+      }
+
+      .chip.violet {
+        color: var(--violet);
+        border-color: rgba(124, 58, 237, 0.18);
+        background: var(--violet-soft);
+      }
+
+      .flow {
+        display: grid;
+        gap: 14px;
+        margin-top: 20px;
+      }
+
+      .flow-step {
+        display: grid;
+        grid-template-columns: 70px minmax(0, 1fr);
+        gap: 18px;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .step-index {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 54px;
+        height: 54px;
+        border-radius: 18px;
+        background: linear-gradient(135deg, rgba(15, 118, 110, 0.18), rgba(15, 118, 110, 0.06));
+        color: var(--accent);
+        font-size: 24px;
         font-weight: 700;
       }
 
-      .tag.ok {
-        background: var(--accent-soft);
-        color: var(--accent);
+      .flow-step h3,
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 20px;
+        letter-spacing: -0.03em;
       }
 
-      .tag.warn {
-        background: var(--amber-soft);
-        color: var(--amber);
+      .flow-step p,
+      .card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.78;
       }
 
-      .tag.bad {
-        background: var(--danger-soft);
-        color: var(--danger);
+      .grid-2,
+      .grid-3 {
+        display: grid;
+        gap: 16px;
+        margin-top: 18px;
       }
 
-      .feedback-list {
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .card {
+        padding: 20px;
+        border-radius: 22px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 255, 255, 0.64);
+      }
+
+      .card ul {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.72;
+      }
+
+      pre {
+        margin: 16px 0 0;
+        padding: 18px;
+        overflow-x: auto;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: #18261f;
+        color: #eaf5eb;
+        line-height: 1.65;
+        font-size: 13px;
+      }
+
+      .tab-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .tab-button {
+        appearance: none;
+        border: 1px solid rgba(23, 49, 42, 0.1);
+        background: rgba(255, 255, 255, 0.66);
+        color: var(--ink);
+        padding: 10px 14px;
+        border-radius: 999px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .tab-button[aria-selected="true"] {
+        color: #fff;
+        border-color: transparent;
+        background: linear-gradient(135deg, var(--accent), #0b615a);
+      }
+
+      .prompt-pane {
+        display: none;
+        padding: 22px;
+        border-radius: 22px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .prompt-pane.active {
+        display: block;
+      }
+
+      .prompt-pane h3 {
+        margin: 0 0 10px;
+        font-size: 24px;
+      }
+
+      .prompt-pane p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.8;
+      }
+
+      .prompt-pane ul {
+        margin: 14px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+
+      .matrix {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .matrix .cell {
+        padding: 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 250, 243, 0.9);
+      }
+
+      .matrix .cell strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .source-list {
+        margin-top: 18px;
+        padding: 18px;
+        border-radius: 22px;
+        border: 1px solid rgba(23, 49, 42, 0.08);
+        background: rgba(255, 255, 255, 0.62);
+      }
+
+      .source-list ul {
         margin: 0;
         padding-left: 18px;
-        line-height: 1.72;
         color: var(--muted);
-      }
-
-      .feedback-list li + li {
-        margin-top: 8px;
-      }
-
-      .dimension-grid {
-        display: grid;
-        gap: 10px;
-      }
-
-      .dimension {
-        padding: 12px 14px;
-        border-radius: 18px;
-        background: rgba(255, 250, 243, 0.9);
-        border: 1px solid rgba(20, 34, 29, 0.06);
-      }
-
-      .dimension strong {
-        display: flex;
-        justify-content: space-between;
-        gap: 12px;
-        font-size: 14px;
-        margin-bottom: 8px;
-      }
-
-      .dimension span {
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.65;
-      }
-
-      .delta-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-
-      .delta-card {
-        padding: 12px 14px;
-        border-radius: 18px;
-        background: rgba(255, 250, 243, 0.92);
-        border: 1px solid rgba(20, 34, 29, 0.06);
-      }
-
-      .delta-card strong {
-        display: block;
-        margin-bottom: 8px;
-        font-size: 13px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-      }
-
-      .delta-card p {
-        margin: 0;
-        color: var(--muted);
-        font-size: 14px;
-        line-height: 1.65;
-      }
-
-      .issue-banner {
-        padding: 14px 16px;
-        border-radius: 18px;
-        background: linear-gradient(180deg, rgba(154, 52, 18, 0.08), rgba(180, 83, 9, 0.06));
-        border: 1px solid rgba(154, 52, 18, 0.12);
-      }
-
-      .issue-banner strong {
-        display: block;
-        margin-bottom: 8px;
-        color: var(--danger);
-        font-size: 13px;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-      }
-
-      .issue-banner p {
-        margin: 0;
-        color: #5f4032;
-        line-height: 1.68;
-      }
-
-      .issue-mark {
-        background: rgba(154, 52, 18, 0.14);
-        color: var(--danger);
-        padding: 2px 6px;
-        border-radius: 8px;
-        font-weight: 700;
+        line-height: 1.85;
       }
 
       .footer {
-        display: flex;
-        justify-content: space-between;
-        gap: 18px;
-        align-items: center;
-        margin-top: 22px;
-        padding: 24px 6px 0;
+        margin-top: 24px;
         color: var(--muted);
+        text-align: center;
         font-size: 14px;
-      }
-
-      .cta {
-        display: inline-flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 18px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, var(--accent), #0f5b55);
-        color: #fff;
-        text-decoration: none;
-        font-weight: 700;
-        letter-spacing: 0.02em;
-        box-shadow: 0 16px 32px rgba(15, 118, 110, 0.24);
-      }
-
-      code {
-        font-family: "SFMono-Regular", "IBM Plex Sans", monospace;
-        background: rgba(20, 34, 29, 0.07);
-        border-radius: 8px;
-        padding: 2px 7px;
       }
 
       @media (max-width: 1120px) {
         .hero-grid,
-        .task-grid,
-        .round-layout,
-        .score-board,
-        .trajectory,
-        .focus-strip,
-        .delta-grid {
+        .layout,
+        .grid-2,
+        .grid-3,
+        .matrix {
           grid-template-columns: 1fr;
         }
 
-        .stat-strip {
-          grid-template-columns: repeat(2, minmax(0, 1fr));
+        .sidebar {
+          position: static;
         }
       }
 
       @media (max-width: 720px) {
         .page {
-          width: min(100vw - 24px, 1280px);
-          padding-top: 18px;
+          width: min(100vw - 20px, 100%);
+          padding: 14px 0 40px;
         }
 
         .hero,
         .section,
-        .round-card {
-          padding: 22px;
+        .sidebar {
+          padding: 20px;
         }
 
-        .topline,
-        .footer,
-        .round-top {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-
-        h1 {
-          font-size: 38px;
-        }
-
-        .hero p,
-        .pullquote p {
-          font-size: 17px;
-        }
-
-        .stat-strip,
-        .meta-grid {
+        .flow-step {
           grid-template-columns: 1fr;
         }
       }
     </style>
   </head>
   <body>
-    <main class="page">
+    <div class="page">
       <div class="topline">
-        <span><i class="dot"></i> AutoResearch Demo Archive</span>
-        <span>GaryBot / MCP Verdict / 五轮中文卡片 / 实验结论</span>
+        <span><i class="dot"></i> GaryBot Auto Research</span>
+        <span>Flow · Models · Prompt Design</span>
       </div>
 
-      <section class="hero">
-        <div class="eyebrow">AutoResearch · MCP Verdict Rerun</div>
-        <h1>把一次修复后的真实五轮运行，完整摊开给你看。</h1>
-        <p>
-          这页展示的不是概念稿，而是修复 verifier MCP verdict 链路之后的一次真实重跑。
-          你能同时看到命题、每轮 6 行候选、每轮 Verifier 反馈、分数怎么上涨，
-          以及 gateway 在遇到一次坏掉的工具参数后，如何让同一轮自动重试并继续跑完整个闭环。
-        </p>
-
+      <header class="hero">
+        <div class="eyebrow">Implementation Snapshot</div>
         <div class="hero-grid">
-          <div class="stat-strip">
-            <div class="stat">
-              <strong>5</strong>
-              <span>完整跑满五轮，五条候选与五条结构化 verdict 全部保留</span>
-            </div>
-            <div class="stat">
-              <strong>8.3</strong>
-              <span>最佳得分出现在第 5 轮，较首轮提升 1.5 分</span>
-            </div>
-            <div class="stat">
-              <strong>5/5</strong>
-              <span>五个 verify 线程最终都通过 MCP tool 存下结构化 verdict</span>
-            </div>
-            <div class="stat">
-              <strong>1</strong>
-              <span>第 1 轮出现一次坏掉的字符串化参数，随后同轮自愈重试成功</span>
-            </div>
+          <div>
+            <h1>
+              Auto Research
+              <em>流程、数据模型与提示词</em>
+            </h1>
+            <p>
+              这页不是在讲“理想中的 Auto Research”，而是在整理当前 GaryBot
+              实现里真正存在的三层结构：
+              <span class="mono">loop 流程</span>、
+              <span class="mono">durable 数据模型</span>、
+              <span class="mono">worker / verifier 提示词设计</span>。
+              目的是把现在这套系统讲清楚，方便直接发链接讨论。
+            </p>
           </div>
 
-          <aside class="hero-card">
-            <h2>你在这页里会直接看到</h2>
-            <ul>
-              <li>修复前后最关键的链路变化。</li>
-              <li>真实中文命题与 Definition of Done。</li>
-              <li>五轮 score 轨迹与每轮 6 行候选卡片。</li>
-              <li>每轮 Verifier 的 strengths、weaknesses、suggestions。</li>
-            </ul>
-          </aside>
+          <div class="stats">
+            <div class="stat">
+              <strong>Loop Shape</strong>
+              <span>Work → Verify → Iterate</span>
+            </div>
+            <div class="stat">
+              <strong>Current Roles</strong>
+              <span>Worker + Verifier</span>
+            </div>
+            <div class="stat">
+              <strong>Core State</strong>
+              <span>Run / Iteration / Candidate</span>
+            </div>
+            <div class="stat">
+              <strong>Verifier Contract</strong>
+              <span>Tool Verdict Only</span>
+            </div>
+          </div>
         </div>
+      </header>
 
-        <nav class="quick-nav" aria-label="Quick Navigation">
-          <a href="#fix">修复结论</a>
-          <a href="#brief">命题与约束</a>
-          <a href="#scores">五轮得分轨迹</a>
-          <a href="#rounds">逐轮输出与反馈</a>
-          <a href="#takeaway">实验结论</a>
-        </nav>
-      </section>
-
-      <div class="content">
-        <section class="section" id="fix">
-          <div class="section-header">
-            <h2>修复结论</h2>
-            <span>本次真实 run_id: <code>ar_af30525282fc49ecb5a9541ee7fe0870</code></span>
+      <div class="layout">
+        <aside class="sidebar">
+          <h2>目录</h2>
+          <nav>
+            <a href="#overview">整体概览</a>
+            <a href="#flow">运行流程</a>
+            <a href="#states">状态机</a>
+            <a href="#models">数据模型</a>
+            <a href="#prompts">提示词</a>
+            <a href="#controls">控制信号</a>
+            <a href="#sources">来源</a>
+          </nav>
+          <div class="note">
+            当前实现里
+            <span class="mono">research_spec</span>
+            是单一事实来源；顶层
+            <span class="mono">task / definition / definition_lines</span>
+            更像 API 兼容层。
           </div>
+        </aside>
 
-          <div class="task-grid">
-            <div class="detail-card">
-              <h3>这次修了什么</h3>
-              <ul class="feedback-list">
-                <li><code>auto_research_verdict</code> 已经成为 AutoResearch verifier 的主判定路径，不再依赖自由文本 JSON 作为主流程。</li>
-                <li>active verifier thread authorization 让 tool 调用不再要求自定义 header 每一跳都成功回放。</li>
-                <li>gateway 现在接受合法的 JSON-stringified verdict 数组字段，降低 provider 侧参数漂移造成的直接拒绝率。</li>
-              </ul>
+        <main class="content">
+          <section class="section" id="overview">
+            <div class="section-head">
+              <div>
+                <h2>整体概览</h2>
+                <p>
+                  Auto Research 不是“把用户问题丢给一个大 prompt 然后等回复”，而是一个有 durable run state、明确 work/verify 边界、可回看 candidate
+                  历史、可重验证、可被 budget 和 provider health 打断的 bounded loop。
+                </p>
+              </div>
             </div>
 
-            <div class="detail-card">
-              <h3>这次真实验证到了什么</h3>
-              <ul class="feedback-list">
-                <li>五个 verify 线程全部通过 MCP tool 存下了结构化 verdict，整个 run 完整跑满 5 轮。</li>
-                <li>第 1 轮仍然出现了一次坏掉的字符串化 <code>dimension_scores</code>，但同一 verify 线程随即用正确数组重试成功，主循环没有中断。</li>
-                <li>后续第 2 到第 5 轮都是一次成功提交，最终 best score 从 <code>6.8</code> 持续提升到 <code>8.3</code>。</li>
-              </ul>
+            <div class="chips">
+              <span class="chip accent">Durable Run State</span>
+              <span class="chip">ResearchSpec-Driven</span>
+              <span class="chip orange">Search Signal Feedback</span>
+              <span class="chip violet">Reverify Path</span>
+              <span class="chip">Provider Health Guardrail</span>
             </div>
-          </div>
+          </section>
 
-          <div class="task-grid" style="margin-top: 18px;">
-            <div class="pullquote">
-              <strong>一句话结论</strong>
+          <section class="section" id="flow">
+            <div class="section-head">
+              <div>
+                <h2>运行流程</h2>
+                <p>
+                  下面这条线是当前 gateway 实现里的真实顺序，不是抽象流程图。
+                  每一步都对应到具体 thread 命名、持久化节点和 verifier contract。
+                </p>
+              </div>
+            </div>
+
+            <div class="flow">
+              <article class="flow-step">
+                <div class="step-index">1</div>
+                <div>
+                  <h3>创建 Run，先把请求规范化到 <span class="mono">ResearchSpec</span></h3>
+                  <p>
+                    用户传进来的
+                    <span class="mono">task / definition / definition_lines</span>
+                    会先归一化成
+                    <span class="mono">goal / dimensions / context / scope_paths / time_budget_secs / max_iterations</span>。
+                    后续 loop 直接消费的是
+                    <span class="mono">research_spec</span>。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">2</div>
+                <div>
+                  <h3>每轮先检查终态、预算、provider 健康度、pending reverify</h3>
+                  <p>
+                    Loop 进入每次迭代时，会先判断 run 是否已经终止、时间预算是否耗尽、同 workspace 是否刚发生 transport failure。
+                    如果当前有 reverify 请求，会优先走 reverify 分支，而且不消耗 iteration 数。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">3</div>
+                <div>
+                  <h3>Researching：构造 Worker Prompt，跑 Work Thread</h3>
+                  <p>
+                    Worker prompt 会注入当前 spec、反馈、search signal、best candidate、
+                    candidate 历史压缩摘要，以及按预算百分比分出来的策略模式。
+                    Work thread 形状是
+                    <span class="mono">thread::auto-research::{run_id}::work::{iteration}</span>。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">4</div>
+                <div>
+                  <h3>先把 Work 产物落盘，再进入 Verify</h3>
+                  <p>
+                    Worker 产出的 candidate result 会先以
+                    “<span class="mono">work_completed_pending_verify</span>”
+                    的状态写进 iteration。这样 verify 阶段即使失败，这轮 work 产物也不会丢失。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">5</div>
+                <div>
+                  <h3>Judging：构造 Verifier Prompt，强制提交 MCP Verdict</h3>
+                  <p>
+                    Verifier thread 形状是
+                    <span class="mono">thread::auto-research::{run_id}::verify::{iteration}</span>。
+                    当前实现不接受 verifier 在聊天里手写 JSON；必须通过
+                    <span class="mono">auto_research_verdict</span>
+                    工具提交结构化 verdict。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">6</div>
+                <div>
+                  <h3>记录 Candidate，更新 Best，写回 SearchSignal</h3>
+                  <p>
+                    每轮 verify 成功后会生成一个
+                    <span class="mono">Candidate</span>，
+                    挂上
+                    <span class="mono">Verdict</span>。
+                    接着更新全局最优、计算 convergence / regression，再把
+                    <span class="mono">search_signal</span>
+                    写回 run，供下一轮 worker prompt 使用。
+                  </p>
+                </div>
+              </article>
+
+              <article class="flow-step">
+                <div class="step-index">7</div>
+                <div>
+                  <h3>继续下一轮，或进入终态</h3>
+                  <p>
+                    终态可能来自 budget、blocked、user stop，也可能来自 loop 完成。
+                    当前实现里模型层保留了 legacy 的
+                    <span class="mono">passed</span>，
+                    但 loop 正常跑完后也会落到
+                    <span class="mono">completed</span>。
+                  </p>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="states">
+            <div class="section-head">
+              <div>
+                <h2>状态机</h2>
+                <p>
+                  产品层常说
+                  <span class="mono">queued → researching → judging → passed / blocked / budget_exhausted</span>，
+                  但当前模型实际上是下面这组状态。
+                </p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <article class="card">
+                <h3><span class="chip accent">Queued</span> 待执行</h3>
+                <p>Run 已创建，还没进入任何 worker/verifier 实际运行。</p>
+              </article>
+
+              <article class="card">
+                <h3><span class="chip accent">Researching</span> 工作中</h3>
+                <p>Worker 正在产出这一轮可验证的 candidate。</p>
+              </article>
+
+              <article class="card">
+                <h3><span class="chip orange">Judging</span> 验证中</h3>
+                <p>Verifier 正在对当前 candidate 做结构化打分与反馈。</p>
+              </article>
+
+              <article class="card">
+                <h3><span class="chip">Completed / Passed</span> 正常终态</h3>
+                <p>当前实现里两者都存在，其中 <span class="mono">Passed</span> 主要是 legacy 兼容。</p>
+              </article>
+
+              <article class="card">
+                <h3><span class="chip orange">Budget Exhausted</span> 预算耗尽</h3>
+                <p>直接受 <span class="mono">time_budget_secs</span> 的 wall-clock deadline 控制。</p>
+              </article>
+
+              <article class="card">
+                <h3><span class="chip violet">Blocked / UserStopped</span> 被阻断</h3>
+                <p>包括 provider transport failure、用户主动停止、网关重启等情形。</p>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="models">
+            <div class="section-head">
+              <div>
+                <h2>数据模型</h2>
+                <p>
+                  这一层决定了 UI 能看见什么、loop 能记住什么、下一轮 prompt 能拿到什么。
+                  重点在于字段职责，不只是字段名。
+                </p>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <article class="card">
+                <h3>AutoResearchRun</h3>
+                <p>
+                  Run 是 durable 根对象，承载任务、预算、candidate 历史、search signal 以及用户选中的 candidate。
+                </p>
+                <pre><code>type AutoResearchRun = {
+  run_id: string;
+  state: 'queued' | 'researching' | 'judging'
+       | 'passed' | 'completed'
+       | 'budget_exhausted' | 'blocked' | 'user_stopped';
+  task: string;
+  definition: string;
+  definition_lines: string[];
+  browsing_allowed: boolean;
+  file_edits_allowed: boolean;
+  output_type?: string;
+  max_iterations: number;
+  time_budget_secs: number;
+  iterations_used: number;
+  terminal_reason?: string;
+  search_signal?: SearchSignal;
+  research_spec?: ResearchSpec;
+  candidates: Candidate[];
+  selected_candidate?: string;
+};</code></pre>
+                <ul>
+                  <li><span class="mono">research_spec</span> 才是 loop 真正消费的规格对象。</li>
+                  <li><span class="mono">provider_metadata</span> 创建时可传，但只保存在执行内存里，不暴露给读接口。</li>
+                  <li><span class="mono">selected_candidate</span> 仍兼容旧的数字索引序列化。</li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>ResearchSpec</h3>
+                <p>
+                  这是当前设计里最重要的“单一事实来源”。如果要读懂 prompt，先看它。
+                </p>
+                <pre><code>type ResearchSpec = {
+  goal: string;
+  dimensions: string[];
+  context?: string;
+  scope_paths: string[];
+  time_budget_secs: number;
+  max_iterations: number;
+};</code></pre>
+                <ul>
+                  <li><span class="mono">goal</span> 决定 worker 与 verifier 的共同北极星。</li>
+                  <li><span class="mono">dimensions</span> 会直接映射到 verifier 的 dimension_scores。</li>
+                  <li><span class="mono">scope_paths</span> 会显式进入 worker prompt 作为改动范围约束。</li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>AutoResearchIteration</h3>
+                <p>
+                  Iteration 是“这一轮发生了什么”的记录层，不是完整 loop 内存镜像。
+                </p>
+                <pre><code>type AutoResearchIteration = {
+  run_id: string;
+  iteration_index: number;
+  state: 'researching' | 'judging' | 'completed';
+  work_thread_id?: string;
+  verify_thread_id?: string;
+  research_plan?: string;
+  candidate_result?: string;
+  judge_verdict?: unknown;
+  started_at: string;
+  completed_at?: string;
+};</code></pre>
+                <ul>
+                  <li>UI 主要靠它呈现每轮摘要与判定结果。</li>
+                  <li>work 结果会比 verify 更早落盘，确保 crash safety。</li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>Candidate / Verdict</h3>
+                <p>
+                  Candidate 是搜索空间里的候选解；Verdict 是 verifier 施加的结构化质量边界。
+                </p>
+                <pre><code>type Candidate = {
+  candidate_id: string;     // c_1, c_2, ...
+  iteration: number;
+  commit_sha?: string;
+  branch?: string;
+  approach_summary: string;
+  based_on?: number;
+  verdict?: Verdict;
+  duration_secs: number;
+};
+
+type Verdict = {
+  overall_score: number;    // 0..10
+  dimension_scores: {
+    dimension: string;
+    score: number;
+    evidence: string;
+  }[];
+  vs_best?: string;
+  strengths: string[];
+  weaknesses: string[];
+  suggestions: string[];
+};</code></pre>
+                <ul>
+                  <li><span class="mono">overall_score</span> 和 dimension score 都要求在 <span class="mono">0..10</span> 范围内。</li>
+                  <li><span class="mono">vs_best</span> 不是可选摆设，它体现了“当前 candidate 和历史最优比如何”。</li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>SearchSignal</h3>
+                <p>
+                  SearchSignal 不描述单个 candidate，而描述整个搜索轨迹是不是已经陷入收敛或退化。
+                </p>
+                <pre><code>type SearchSignal =
+  | {
+      kind: 'converged';
+      best_score: number;
+      last_scores: number[];
+    }
+  | {
+      kind: 'regressing';
+      prev_avg: number;
+      curr_avg: number;
+    };</code></pre>
+                <ul>
+                  <li>近 3 个 candidate 都离 best 很近，会触发 <span class="mono">converged</span>。</li>
+                  <li>后 3 个均分明显低于前 3 个，会触发 <span class="mono">regressing</span>。</li>
+                </ul>
+              </article>
+
+              <article class="card">
+                <h3>Thread 形状</h3>
+                <p>
+                  当前 loop 是强线程化的，这让 debug、重放、权限控制都更清晰。
+                </p>
+                <pre><code>work:
+thread::auto-research::{run_id}::work::{iteration}
+
+verify:
+thread::auto-research::{run_id}::verify::{iteration}
+
+reverify:
+thread::auto-research::{run_id}::reverify::{candidate_id}</code></pre>
+                <ul>
+                  <li>Verifier thread 会被授权调用 <span class="mono">auto_research_verdict</span>。</li>
+                  <li>这也是为什么 <span class="mono">gary debug</span> 能精确追踪整个 loop。</li>
+                </ul>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="prompts">
+            <div class="section-head">
+              <div>
+                <h2>提示词</h2>
+                <p>
+                  当前 Auto Research 的 prompt 不是“一个大总 prompt”，而是 Worker 与 Verifier 两套不同 contract：前者负责搜索和产出，后者负责工具化评审。
+                </p>
+              </div>
+            </div>
+
+            <div class="tab-list" role="tablist" aria-label="Prompt sections">
+              <button class="tab-button" role="tab" aria-selected="true" data-tab="worker">
+                Worker Prompt
+              </button>
+              <button class="tab-button" role="tab" aria-selected="false" data-tab="verifier">
+                Verifier Prompt
+              </button>
+              <button class="tab-button" role="tab" aria-selected="false" data-tab="runtime">
+                Prompt Runtime
+              </button>
+            </div>
+
+            <section class="prompt-pane active" data-pane="worker">
+              <h3>Worker Prompt：让每轮都处于“有限搜索 + 明确反馈”的局部状态</h3>
               <p>
-                这次修复把 AutoResearch 的 verifier 主路径从“可能被自由文本 JSON 绊倒”收成了“以 MCP tool 为主、授权可兜底、参数漂移可容忍、同轮还能自愈重试”的状态。
+                Worker prompt 的关键不是“描述任务”，而是把模型放进一个带预算、带 best candidate、带失败反馈、带搜索信号的局部决策场景。
               </p>
-            </div>
 
-            <div class="detail-card">
-              <h3>仍然值得继续收口的点</h3>
-              <ul class="feedback-list">
-                <li>第 1 轮的第一次 tool call 仍然会偶发坏掉，说明 provider 侧还会产出 malformed stringified array。</li>
-                <li>当前链路已经能自愈，但下一步仍值得继续压低“首跳失败、二跳成功”的发生率。</li>
-                <li>这页的价值就在于，它不是假设修好了，而是把修复后的真实残余问题也一并展示出来。</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section class="section" id="brief">
-          <div class="section-header">
-            <h2>命题与完整约束</h2>
-            <span>状态：<code>completed / budget_exhausted: 5 candidates evaluated, best score 8.3</code></span>
-          </div>
-
-          <div class="task-grid">
-            <div class="panel">
-              <h3>任务目标</h3>
-              <div class="pullquote">
-                <strong>Task</strong>
-                <p>基于仓库文档，产出一张适合现场 Demo 的 AutoResearch 中文介绍卡片。</p>
-              </div>
-            </div>
-
-            <div class="panel">
-              <h3>运行元数据</h3>
-              <div class="meta-grid">
-                <div class="meta-item">
-                  <strong>Run ID</strong>
-                  <span><code>ar_af30525282fc49ecb5a9541ee7fe0870</code></span>
+              <div class="matrix">
+                <div class="cell">
+                  <strong>Explore</strong>
+                  <div class="mono">&lt; 40% budget</div>
+                  <p>尝试完全不同的方法，不要顺着旧 candidate 小修小补。</p>
                 </div>
-                <div class="meta-item">
-                  <strong>输出类型</strong>
-                  <span><code>demo_card</code></span>
+                <div class="cell">
+                  <strong>Mix</strong>
+                  <div class="mono">40% ~ 70%</div>
+                  <p>允许在“继续打磨”和“换方向”之间折中。</p>
                 </div>
-                <div class="meta-item">
-                  <strong>Iteration Budget</strong>
-                  <span>5 / 5</span>
-                </div>
-                <div class="meta-item">
-                  <strong>边界</strong>
-                  <span>不允许 browsing；不允许 file edits</span>
+                <div class="cell">
+                  <strong>Exploit</strong>
+                  <div class="mono">&gt;= 70%</div>
+                  <p>预算快用尽时，优先修 best candidate 的 weaknesses。</p>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="task-grid" style="margin-top: 18px;">
-            <div class="detail-card">
-              <h3>Definition of Done</h3>
-              <ol class="prompt-list">
-                <li>只输出 6 行，且前缀顺序固定为：标题：、核心观点：、证据一：、证据二：、证据三：、结尾：。</li>
-                <li>标题必须同时包含 <code>AutoResearch</code> 和“开放性问题”。</li>
-                <li>核心观点必须同时包含“对抗式收敛”、<code>Worker</code>、<code>Verifier</code>，并说明两者如何互相施压。</li>
-                <li>证据一必须引用 <code>[docs/auto-research.md]</code>，说明它是面向用户的 harness 功能，或说明用户提供 Task + Definition。</li>
-                <li>证据二必须引用 <code>[docs/architecture.md]</code>，并明确提到 <code>garybot-gateway</code> 或 <code>garybot-router</code> 在流程中的角色。</li>
-                <li>证据三必须引用 <code>[docs/agent/runtime-map.md]</code>，并明确提到 <code>desktop/gary-desktop</code>，或说明 verifier verdict 通过 MCP tool 提交。</li>
-                <li>结尾必须同时包含“优化型任务”和“越跑越好”，全文必须是中文，不允许额外说明、分隔线或 markdown 列表。</li>
-              </ol>
-            </div>
+              <pre><code>You are Gary's Worker Agent (Auto Research loop).
 
-            <div class="detail-card">
-              <h3>为什么这个命题适合 Demo</h3>
-              <ul class="feedback-list">
-                <li>它是明显的开放性、优化型任务，不是一眼就有唯一正确答案的封闭题。</li>
-                <li>结构约束很硬，内容空间又足够大，天然适合演示“格式、叙事、卖点”之间的反复拉扯。</li>
-                <li>每轮提升都能被 verifier 讲清楚，所以这不是“润色几次”，而是“每轮都知道为什么变好”。</li>
-                <li>最终没有一轮神奇满分，反而更适合说明 AutoResearch 的真实价值是“持续逼近更优”。</li>
-              </ul>
-            </div>
-          </div>
-        </section>
+Goal:
+{goal}
 
-        <section class="section" id="scores">
-          <div class="section-header">
-            <h2>五轮得分轨迹</h2>
-            <span>真实 scores：<code>6.8 → 7.5 → 7.8 → 8.2 → 8.3</code></span>
-          </div>
-          <div class="score-board">
-            <div class="score-card">
-              <h3>第 1 轮</h3>
-              <strong>6.8</strong>
-              <span>闭环讲清楚了，但证据归属和用户视角还不够稳；同轮发生 1 次 tool 重试。</span>
-            </div>
-            <div class="score-card">
-              <h3>第 2 轮</h3>
-              <strong>7.5</strong>
-              <span>来源归属修正，用户视角补上，标题与术语开始朝 demo 口吻靠拢。</span>
-            </div>
-            <div class="score-card">
-              <h3>第 3 轮</h3>
-              <strong>7.8</strong>
-              <span>“答题人 vs 出题人”的类比让 Worker / Verifier 更好懂，但整体还偏段落式。</span>
-            </div>
-            <div class="score-card">
-              <h3>第 4 轮</h3>
-              <strong>8.2</strong>
-              <span>扫描性、卖点压缩和结构表达进一步变好，开始像真正的演示卡片。</span>
-            </div>
-            <div class="score-card">
-              <h3>第 5 轮</h3>
-              <strong>8.3</strong>
-              <span>最佳版本出现，但核心观点仍偏长、来源标记仍略显学术化，所以没有满分。</span>
-            </div>
-          </div>
-          <div class="trajectory">
-            <div class="trajectory-step" style="--pct: 68%;">
-              <div class="trajectory-top">
-                <strong>第 1 轮</strong>
-                <span class="trajectory-value">6.8</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">先把“Worker / Verifier / gateway / desktop”这条主线讲出来，但证据二归属和用户体验卖点没立稳。</div>
-            </div>
-            <div class="trajectory-step" style="--pct: 75%;">
-              <div class="trajectory-top">
-                <strong>第 2 轮</strong>
-                <span class="trajectory-value">7.5</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">关键来源归属被修正，Task + Definition 的用户视角终于进入卡片主体。</div>
-            </div>
-            <div class="trajectory-step" style="--pct: 78%;">
-              <div class="trajectory-top">
-                <strong>第 3 轮</strong>
-                <span class="trajectory-value">7.8</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">标题与类比更有 demo 感，但 verifier 开始反过来要求更轻、更快扫读的结构。</div>
-            </div>
-            <div class="trajectory-step" style="--pct: 82%;">
-              <div class="trajectory-top">
-                <strong>第 4 轮</strong>
-                <span class="trajectory-value">8.2</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">措辞和视觉锚点继续优化，单行卖点更聚焦，但“对弈”一词被指出有零和误导。</div>
-            </div>
-            <div class="trajectory-step" style="--pct: 83%;">
-              <div class="trajectory-top">
-                <strong>第 5 轮</strong>
-                <span class="trajectory-value">8.3</span>
-              </div>
-              <div class="trajectory-track"><div class="trajectory-fill"></div></div>
-              <div class="trajectory-note">最终最优版本出现，提升还在继续，但最后 0.1 分已经很难拿，正好说明“越跑越好”不是线性收益。</div>
-            </div>
-          </div>
-          <div class="focus-strip">
-            <div class="focus-card">
-              <h3>Verifier 焦点如何变化</h3>
+Evaluation dimensions:
+{dimensions}
+
+{context}
+{scope}
+{feedback}
+{signal}
+Iteration: {iteration} of {max_iterations} ({budget_pct}% budget used)
+
+{best_info}
+
+STRATEGY: {strategy}
+
+Previous candidates tried (avoid repeating approaches):
+{previous_candidates}
+
+Instructions:
+- Produce a concrete candidate solution...
+- Do not ask the user follow-up questions...
+- Return concrete progress...
+- Keep the answer concise, concrete, and implementation-grounded.
+- Summarize your approach at the top (1-3 sentences).</code></pre>
+
               <ul>
-                <li>第 1 轮先抓事实归属和用户视角。</li>
-                <li>第 2 到第 3 轮开始盯标题、术语密度和口语化表达。</li>
-                <li>第 4 到第 5 轮则主要在抠“demo 友好度”和“最后 0.1 分的表达质量”。</li>
+                <li><span class="mono">Human Guidance</span> 会直接插入 prompt，并要求优先遵守。</li>
+                <li><span class="mono">search_signal</span> 会在 prompt 里显式提醒“收敛”或“退化”，迫使 worker 调整方向。</li>
+                <li><span class="mono">best_info</span> 会带当前 best candidate 的分数与 weaknesses 摘要。</li>
+                <li>历史 candidate 不会无限膨胀，而是压缩成得分分布、Top 3、Recent 2 和 omitted one-liner。</li>
               </ul>
-            </div>
-            <div class="focus-card">
-              <h3>为什么这很适合讲开放题</h3>
+
+              <pre><code>Candidate context compression:
+- score distribution summary
+- top 3 scored candidates
+- recent 2 candidates
+- omitted display cap = 10
+- top weaknesses cap = 3
+- each weakness cap = 200 chars</code></pre>
+            </section>
+
+            <section class="prompt-pane" data-pane="verifier">
+              <h3>Verifier Prompt：只接受 Tool Verdict，不接受 text JSON fallback</h3>
               <p>
-                这不是一道“答对就结束”的题，而是一次可持续优化的开放题。
-                每一轮都不是简单改字，而是在新的高水位上继续被 Verifier 逼着补剩余短板。
+                Verifier 在当前实现里不是“点评员”，而是带工具约束的结构化判官。它的主要职责不是写分析，而是提交正确的 verdict payload。
               </p>
-            </div>
-            <div class="focus-card">
-              <h3>现场讲解抓手</h3>
+
+              <pre><code>You are Gary's Verifier Agent (Auto Research loop).
+
+Evaluate the candidate strictly against the goal and evaluation dimensions.
+Submit the verdict by calling the `auto_research_verdict` MCP tool exactly once.
+Do not hand-write the verdict in the chat response.
+Do not narrate your analysis or add a prose summary before or after the tool call.
+Your visible response should be the tool call itself; after a successful tool submission, stop.
+Use these fields in the tool call:
+  overall_score
+  dimension_scores
+  vs_best
+  strengths
+  weaknesses
+  suggestions
+If the tool returns an error, inspect the tool result, correct the arguments,
+and retry the tool call.
+Do not switch to text JSON or treat text JSON as a valid fallback path.
+
+Goal:
+{goal}
+
+Evaluation dimensions:
+{dimensions}
+
+{best_comparison}
+
+Candidate to evaluate:
+{candidate}</code></pre>
+
               <ul>
-                <li>先讲工程修复：verdict 从自由文本收成 MCP tool。</li>
-                <li>再讲产品价值：五轮里每次都能看懂它为什么变得更好。</li>
-                <li>最后讲剩余问题：连第 5 轮都还可以更好，这正是开放题的本质。</li>
+                <li>Gateway 在 verifier run 结束后会先尝试取 tool-submitted verdict。</li>
+                <li>如果只有文本输出、没有 MCP verdict，当前实现会直接报错，不采信 text JSON。</li>
+                <li>这也是为什么 verifier prompt 里会反复强调“不要手写 verdict”。</li>
               </ul>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        <section class="section" id="rounds">
-          <div class="section-header">
-            <h2>逐轮输出与 Verifier 反馈</h2>
-            <span>每轮都保留了真实 6 行候选；每轮 verdict 都来自同一条内部 MCP tool 链路</span>
-          </div>
-
-          <div class="rounds">
-            <article class="round-card">
-              <div class="round-top">
-                <div>
-                  <span class="round-badge">Round 1</span>
-                  <h3 class="round-title">先把闭环讲清楚，但证据归属和用户卖点还不稳</h3>
-                  <p class="round-subtitle">
-                    第一轮已经把“Worker / Verifier / gateway / desktop”整条链路摆出来了。
-                    不过证据二把某些运行时描述归错了源，用户为什么会喜欢这个功能也讲得不够强。
-                  </p>
-                </div>
-                <div class="score-pill">6.8 / 10 · 1 次 tool 重试</div>
-              </div>
-              <div class="round-layout">
-                <div class="artifact">
-                  <strong>Round 1 Output</strong>
-<pre>标题：AutoResearch——让 AI 自己跑闭环来解决开放性问题
-核心观点：AutoResearch 采用对抗式收敛机制，Worker 负责产出候选结果，Verifier 负责按验收标准打分并列出缺失项，两者在每轮迭代中互相施压——Worker 被迫补齐 Verifier 指出的不足，Verifier 则被迫对 Worker 的新产出重新严格审查，循环直到通过或预算耗尽。
-证据一：[docs/auto-research.md] 明确指出 Auto Research 是 Gary 第一个面向用户的 harness 功能，用户只需给出 Task（要做什么）和 Definition（什么算完成），Gary 便自动启动 Worker-Verifier 闭环迭代。
-证据二：[docs/architecture.md] 显示 garybot-gateway 是整个系统的 HTTP 控制面，负责路由、聊天 API 与自动化调度，AutoResearch 的运行状态创建、迭代管理和停止语义均由 gateway 控制面驱动。
-证据三：[docs/agent/runtime-map.md] 记载 desktop/gary-desktop 是 AutoResearch 控制面的客户端，Verifier 通过内部 auto_research_verdict MCP tool 提交结构化判定结果，确保判定数据机器可读且可追溯。
-结尾：AutoResearch 天然适合优化型任务——每一轮 Verifier 反馈都驱动 Worker 精准修正，结果越跑越好，直到满足验收标准为止。</pre>
-                </div>
-                <div class="feedback-card">
-                  <h3>Verifier 反馈</h3>
-                  <div class="tag-row">
-                    <span class="tag warn">总分：6.8</span>
-                    <span class="tag bad">证据二源归属不准</span>
-                    <span class="tag ok">闭环逻辑已搭起来</span>
-                  </div>
-                  <ul class="feedback-list">
-                    <li>强项：六行结构完整，Worker / Verifier 的闭环关系和“优化型任务”的价值都讲出来了。</li>
-                    <li>弱项：证据二把某些运行时描述错归到 <code>architecture.md</code>；用户只填 Task + Definition 这件事还没有被突出成 demo 卖点。</li>
-                    <li>建议：修正来源归属，并明确告诉观众“用户只填两栏，Gary 自己跑闭环”。</li>
-                  </ul>
-                  <div class="delta-grid">
-                    <div class="delta-card">
-                      <strong>工程链路观察</strong>
-                      <p>这一轮先发出了一次坏掉的字符串化 <code>dimension_scores</code>，随后同一 verify 线程重试为标准数组并成功存下 verdict。</p>
-                    </div>
-                    <div class="delta-card">
-                      <strong>为什么适合当起点</strong>
-                      <p>它已经像答案了，但 verifier 还能清楚指出“哪一条证据不准、哪一个卖点不够亮”。</p>
-                    </div>
-                  </div>
-                  <div class="issue-banner">
-                    <strong>本轮主要缺口</strong>
-                    <p>证据二的归属错误会直接削弱可信度，而“Task + Definition 极简输入”没有前置，会让这张卡片少了 Demo 场景里最能打动人的一层。</p>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="round-card">
-              <div class="round-top">
-                <div>
-                  <span class="round-badge">Round 2</span>
-                  <h3 class="round-title">修正来源，补上用户视角，但标题和术语仍偏学术</h3>
-                  <p class="round-subtitle">
-                    第二轮明显在按反馈修：来源归属被纠正，用户为什么会喜欢它也更清楚了。
-                    但标题和核心观点仍有一点“写给技术人看”的味道。
-                  </p>
-                </div>
-                <div class="score-pill">7.5 / 10</div>
-              </div>
-              <div class="round-layout">
-                <div class="artifact">
-                  <strong>Round 2 Output</strong>
-<pre>标题：AutoResearch——用有限迭代收敛开放性问题
-核心观点：AutoResearch 实现对抗式收敛，Worker 负责向前推进并产出候选结果，Verifier 按验收标准打分并列出缺失项反压 Worker 补齐短板，两者在有限迭代预算内互相施压，直到结果达标或预算耗尽。
-证据一：据 [docs/auto-research.md]，AutoResearch 是 Gary 第一个面向用户的 harness 功能，用户只需填写 Task 和 Definition 两个字段，Gary 承诺"自己跑闭环、自己检查、达标才停"。
-证据二：据 [docs/architecture.md]，garybot-gateway 作为 HTTP 控制面统管路由、聊天 API 和自动化调度，AutoResearch 的运行状态与迭代控制在这一层完成，执行则经 garybot-bridge 分发到 Claude 或 Codex 等 provider。
-证据三：据 [docs/agent/runtime-map.md]，Verifier 通过内置 MCP tool auto_research_verdict 提交结构化判定，desktop/gary-desktop 的 AutoResearchPanel 作为控制面客户端实时展示每轮迭代进度与缺失项。
-结尾：这套闭环机制让各类优化型任务都能越跑越好——只要验收标准可量化，从研究调研到代码改进，Gary 都能在有限预算内自动逼近目标。</pre>
-                </div>
-                <div class="feedback-card">
-                  <h3>Verifier 反馈</h3>
-                  <div class="tag-row">
-                    <span class="tag warn">总分：7.5</span>
-                    <span class="tag ok">来源归属修正</span>
-                    <span class="tag ok">用户卖点补上</span>
-                  </div>
-                  <ul class="feedback-list">
-                    <li>强项：证据二终于归到正确的文档；证据三也把 <code>auto_research_verdict</code> tool 和桌面面板价值讲得更完整。</li>
-                    <li>弱项：标题“有限迭代收敛”太学术，核心观点术语密度也偏高，不够适合现场演讲时一眼抓住。</li>
-                    <li>建议：回到更口语化的标题，把 Worker / Verifier 关系讲成观众一听就懂的比喻。</li>
-                  </ul>
-                  <div class="delta-grid">
-                    <div class="delta-card">
-                      <strong>相对上一轮的提升</strong>
-                      <p>从“技术正确”迈向“既正确又像 Demo”，尤其把 Task + Definition 的极简输入拉到了前台。</p>
-                    </div>
-                    <div class="delta-card">
-                      <strong>Verifier 下一轮施压点</strong>
-                      <p>开始不只盯事实，还盯表达方式本身：口语化、标题抓人和术语可理解性。</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="round-card">
-              <div class="round-top">
-                <div>
-                  <span class="round-badge">Round 3</span>
-                  <h3 class="round-title">标题和类比更像 Demo 了，但整体仍然偏段落式</h3>
-                  <p class="round-subtitle">
-                    第三轮开始明显“对外化”：标题更抓人，Worker / Verifier 也被讲成“答题人 vs 出题人”。
-                    代价是它仍然像一段讲解稿，而不是一张 5 秒就能扫完的卡片。
-                  </p>
-                </div>
-                <div class="score-pill">7.8 / 10</div>
-              </div>
-              <div class="round-layout">
-                <div class="artifact">
-                  <strong>Round 3 Output</strong>
-<pre>标题：🔬 AutoResearch——让 AI 自己跑闭环来攻克开放性问题
-核心观点：AutoResearch 的核心是对抗式收敛：Worker 负责产出候选答案，Verifier 负责按验收标准打分挑刺，两者像"答题人 vs 出题人"一样互相施压——Worker 每轮必须补齐 Verifier 列出的缺失项，Verifier 每轮必须用更严格的眼光逼 Worker 进步，直到结果真正达标或迭代预算用尽。
-证据一：AutoResearch 是 Gary 第一个面向用户的 harness 功能 [docs/auto-research.md]，用户只需填写两个字段——Task（想让 Gary 做什么）和 Definition（怎样算做完），系统就自动启动双 Agent 迭代循环，自己检查自己。
-证据二：在架构层面 [docs/architecture.md]，garybot-gateway 是整个流程的控制面——它承载 HTTP API、MCP 服务和聊天接口，负责创建 AutoResearch 运行、管理迭代历史并控制停止语义，所有 Worker 和 Verifier 的调度都经过它。
-证据三：运行时地图 [docs/agent/runtime-map.md] 明确记载，Verifier 通过内部 MCP tool（auto_research_verdict）提交结构化判定结果，desktop/gary-desktop 作为客户端实时展示每轮运行进度，让用户直观观察迭代改进过程。
-结尾：🎯 AutoResearch 专为优化型任务设计——给出目标和验收标准，让 AI 自己越跑越好，跑到满意为止。</pre>
-                </div>
-                <div class="feedback-card">
-                  <h3>Verifier 反馈</h3>
-                  <div class="tag-row">
-                    <span class="tag warn">总分：7.8</span>
-                    <span class="tag ok">类比更好懂</span>
-                    <span class="tag bad">仍偏长、偏段落</span>
-                  </div>
-                  <ul class="feedback-list">
-                    <li>强项：“答题人 vs 出题人”的类比非常有效，非技术观众也能立刻理解 Worker / Verifier 的相互施压。</li>
-                    <li>弱项：整张卡片还是一段段自然文本，来源标记也开始成为视觉噪音，离“台上 5 秒可扫读”的效果还有距离。</li>
-                    <li>建议：继续压缩单行信息密度，让每行只承担一个卖点，同时减少学术感。</li>
-                  </ul>
-                  <div class="delta-grid">
-                    <div class="delta-card">
-                      <strong>相对上一轮的提升</strong>
-                      <p>从“讲对”变成“开始会讲”，这是真正进入对外 demo 口径的一轮。</p>
-                    </div>
-                    <div class="delta-card">
-                      <strong>下一轮的优化方向</strong>
-                      <p>不是再补事实，而是做信息压缩和视觉扫读优化，让卡片更像卡片。</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="round-card">
-              <div class="round-top">
-                <div>
-                  <span class="round-badge">Round 4</span>
-                  <h3 class="round-title">扫描性和卖点压缩继续变好，但“对弈”仍有语义偏差</h3>
-                  <p class="round-subtitle">
-                    第四轮已经开始明显像一张会出现在现场投屏上的卡片：更短、更利落、每行一个重点。
-                    Verifier 开始抓更细的东西，比如“对弈”会让关系看起来过于零和。
-                  </p>
-                </div>
-                <div class="score-pill">8.2 / 10</div>
-              </div>
-              <div class="round-layout">
-                <div class="artifact">
-                  <strong>Round 4 Output</strong>
-<pre>标题：AutoResearch——用双 AI 对弈解决开放性问题
-核心观点：像出题人与答题人互相较劲——Worker 全力产出候选答案，Verifier 按验收标准逐条打分并列出缺失项，两者每轮互相施压迫使结果收敛，这套机制即对抗式收敛。
-证据一：auto-research.md 明确指出 AutoResearch 是面向用户的 harness 功能，用户只需填写 Task（目标）和 Definition（验收标准）即可启动自动闭环。
-证据二：architecture.md 显示 garybot-gateway 是系统的 HTTP 控制面与装配层，AutoResearch 运行状态由它持久化并驱动每轮迭代调度。
-证据三：runtime-map.md 记载 desktop/gary-desktop 作为控制面客户端呈现运行进度，Verifier 的结构化 verdict 通过 MCP tool auto_research_verdict 提交，确保每轮判定可机读可追溯。
-结尾：AutoResearch 天生适合优化型任务——定义清晰就能跑，跑了就有反馈，反馈驱动下一轮，越跑越好。</pre>
-                </div>
-                <div class="feedback-card">
-                  <h3>Verifier 反馈</h3>
-                  <div class="tag-row">
-                    <span class="tag warn">总分：8.2</span>
-                    <span class="tag ok">每行一个卖点</span>
-                    <span class="tag warn">“对弈”暗示过强</span>
-                  </div>
-                  <ul class="feedback-list">
-                    <li>强项：比喻前置、卖点压缩和逐行扫描性都有明显提升，已经很接近一张真正可展示的卡片。</li>
-                    <li>弱项：“对弈”会让人误解成零和博弈，而 Worker / Verifier 实际上是协作中的对抗关系。</li>
-                    <li>建议：保留视觉锚点和口语化表达，但把“对弈”收成更精准的“互审”或“互相挑刺”。</li>
-                  </ul>
-                  <div class="delta-grid">
-                    <div class="delta-card">
-                      <strong>相对上一轮的提升</strong>
-                      <p>verifier 终于不再追着“大方向不对”打，而是在抠词义和叙事微妙度，这说明整体质量已到高水位。</p>
-                    </div>
-                    <div class="delta-card">
-                      <strong>离最佳版本还差什么</strong>
-                      <p>只剩措辞精度和最后一点视觉抓手，已经不是“会不会做”，而是“能不能更漂亮”。</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article class="round-card">
-              <div class="round-top">
-                <div>
-                  <span class="round-badge">Round 5</span>
-                  <h3 class="round-title">最佳版本出现，但最后 0.1 分开始变得很难拿</h3>
-                  <p class="round-subtitle">
-                    第五轮把“对弈”收成了“互审”，标题更精准，emoji 也回来了。
-                    但 verifier 依旧觉得核心观点是超长单句，来源标记也略显学术化，所以停在了 8.3。
-                  </p>
-                </div>
-                <div class="score-pill">8.3 / 10 · Best</div>
-              </div>
-              <div class="round-layout">
-                <div class="artifact">
-                  <strong>Round 5 Output</strong>
-<pre>标题：🔬 AutoResearch：用双 AI 互审收敛开放性问题
-核心观点：AutoResearch 的核心是对抗式收敛——Worker 负责产出候选答案，Verifier 按验收标准打分并列出缺失项，Worker 被迫逐轮补齐短板，Verifier 则被迫给出更精确的判定，两者互相施压直到结果达标或预算耗尽。
-证据一：[docs/auto-research.md] 明确指出 AutoResearch 是 Gary 面向用户的首个 harness 功能，用户只需填写 Task（要做什么）和 Definition（怎样算完成），即可启动自动迭代闭环。
-证据二：[docs/architecture.md] 显示 garybot-gateway 作为 HTTP 控制面承担了 AutoResearch 的运行创建、迭代调度和停止语义，是整条链路的调度中枢。
-证据三：[docs/agent/runtime-map.md] 记载 desktop/gary-desktop 作为控制面客户端展示运行进度，而 Verifier 的结构化 verdict 通过内部 MCP tool（auto_research_verdict）提交，确保判定结果机器可读。
-结尾：AutoResearch 天然适合优化型任务——只要能定义"什么算好"，就能让双 AI 闭环越跑越好。</pre>
-                </div>
-                <div class="feedback-card">
-                  <h3>Verifier 反馈</h3>
-                  <div class="tag-row">
-                    <span class="tag warn">总分：8.3</span>
-                    <span class="tag ok">“互审”语义更准</span>
-                    <span class="tag warn">仍略偏学术</span>
-                  </div>
-                  <ul class="feedback-list">
-                    <li>强项：标题中的“互审”比“对弈”更精准，核心观点也更容易被普通观众接受，这是全场最佳版本。</li>
-                    <li>弱项：核心观点仍是一句很长的话；三条证据还带着方括号来源，投屏时会显得有点像文档摘录而不是发布卡片。</li>
-                    <li>建议：如果还继续跑，下一轮大概率会继续把核心观点拆短，并把来源融入自然行文。</li>
-                  </ul>
-                  <div class="delta-grid">
-                    <div class="delta-card">
-                      <strong>为什么这轮最有说服力</strong>
-                      <p>它已经足够好到能直接拿来讲，同时又保留了“如果继续跑还能更好”的空间，这恰好说明 AutoResearch 对开放题的价值。</p>
-                    </div>
-                    <div class="delta-card">
-                      <strong>为什么它还没满分</strong>
-                      <p>最后 0.1 到 0.5 分已经落在表达微调，而不是功能性错误，这就是开放性优化任务的典型尾段。</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section class="section" id="takeaway">
-          <div class="section-header">
-            <h2>实验结论</h2>
-            <span>这次 Demo 要讲清楚的不是“它会不会做”，而是“它怎样持续逼近更优”</span>
-          </div>
-          <div class="task-grid">
-            <div class="pullquote">
-              <strong>对外表达</strong>
+            <section class="prompt-pane" data-pane="runtime">
+              <h3>Prompt 设计依赖 Runtime 约束，不是孤立文本</h3>
               <p>
-                AutoResearch 最适合开放性、优化型任务。因为这类任务没有一眼就写对的唯一答案，
-                但每一轮都可以在上一轮基础上再好一点。Worker 不断试，Verifier 不断挑刺，
-                最后得到的不是“看起来差不多”，而是一个可解释、可追溯、可持续优化的收敛过程。
+                Prompt 有效，是因为它背后有持久化、线程命名、provider health 与 reverify 逻辑撑着；单独把 prompt 拿出来并不能还原当前 Auto Research。
               </p>
+              <ul>
+                <li>Worker 结果先持久化，再 verify，避免 verify crash 时丢掉 work。</li>
+                <li>Reverify 会重算全局 best，而不是只看当前 candidate。</li>
+                <li>Search signal 在 candidate + iteration 写回前就会被计算并落盘。</li>
+                <li>Provider health preflight 会阻止已知坏状态反复重试。</li>
+              </ul>
+
+              <pre><code>create run
+  → normalize spec
+  → build worker prompt
+  → execute work thread
+  → persist work result
+  → build verifier prompt
+  → submit MCP verdict
+  → update candidates
+  → compute search signal
+  → continue / stop / reverify</code></pre>
+            </section>
+          </section>
+
+          <section class="section" id="controls">
+            <div class="section-head">
+              <div>
+                <h2>控制信号</h2>
+                <p>
+                  这些机制决定了 loop 为什么会停、为什么会换策略、为什么 verifier 不能偷偷降级成自由文本。
+                </p>
+              </div>
             </div>
-            <div class="detail-card">
-              <h3>这次实验真正证明了什么</h3>
-              <ul class="feedback-list">
-                <li>工程上：verifier verdict 主链路已经切到 MCP tool，5 个 verify 线程全部成功存下结构化 verdict。</li>
-                <li>产品上：在开放性卡片任务里，5 轮分数从 <code>6.8</code> 稳定提升到 <code>8.3</code>，每轮都能解释“为什么更好”。</li>
-                <li>系统上：第 1 轮即使出现了一次坏掉的字符串化参数，也能在同轮自愈重试，整个 run 没有因为 verdict 链路而中断。</li>
-                <li>后续上：下一步不是“修大 bug”，而是继续压低首跳 malformed tool args 的发生率，并把最终卡片再推向更轻、更快扫读的表达。</li>
+
+            <div class="grid-3">
+              <article class="card">
+                <h3>Wall-clock Budget</h3>
+                <p>
+                  当前 budget 是基于
+                  <span class="mono">created_at + time_budget_secs</span>
+                  计算出的 deadline，不是单纯的“最多跑几轮”。
+                </p>
+              </article>
+
+              <article class="card">
+                <h3>First Progress Timeout</h3>
+                <p>
+                  Provider run 如果在设定时间内连第一个 progress event 都没有，会被判定为 stalled。
+                </p>
+              </article>
+
+              <article class="card">
+                <h3>Heartbeat Timeout</h3>
+                <p>
+                  不只是起步要有进展；如果后续长时间没有任何 event，也会被视为 provider 停摆。
+                </p>
+              </article>
+
+              <article class="card">
+                <h3>Provider Cooldown</h3>
+                <p>
+                  同 workspace 最近若有 transport failure，会触发冷却期，阻止继续 live loop。
+                </p>
+              </article>
+
+              <article class="card">
+                <h3>Search Signal Feedback</h3>
+                <p>
+                  收敛和退化信号不会只留在日志里，而是会直接反馈到下一轮 worker prompt。
+                </p>
+              </article>
+
+              <article class="card">
+                <h3>Reverify Path</h3>
+                <p>
+                  Reverify 是独立于正常迭代的控制入口，用来重新判定某个 candidate，而不是额外消耗一个正常 iteration。
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="sources">
+            <div class="section-head">
+              <div>
+                <h2>来源</h2>
+                <p>
+                  这页内容整理自 GaryBot 私有实现仓库当前代码与文档，主要参考下面这些文件路径。
+                </p>
+              </div>
+            </div>
+
+            <div class="source-list">
+              <ul>
+                <li><span class="mono">garybot-rs/garybot-models/src/auto_research.rs</span>：Run / Iteration / ResearchSpec / Candidate / Verdict / SearchSignal</li>
+                <li><span class="mono">garybot-rs/garybot-gateway/src/auto_research.rs</span>：loop runtime、worker/verifier prompt、provider health、reverify</li>
+                <li><span class="mono">docs/auto-research.md</span>：产品层定位</li>
+                <li><span class="mono">docs/auto-research-api.md</span>：外露 API 形状与状态语义</li>
               </ul>
             </div>
-          </div>
-        </section>
+          </section>
+        </main>
       </div>
 
-      <footer class="footer">
-        <div>
-          页面主题：<code>AutoResearch MCP Verdict Demo</code><br />
-          本页展示修复后的真实 run、五轮 score 轨迹、逐轮候选与逐轮 Verifier 反馈。
-        </div>
-        <a class="cta" href="https://github.com/Pyiner/GaryBot" target="_blank" rel="noreferrer">
-          查看 GaryBot 仓库
-        </a>
-      </footer>
-    </main>
+      <div class="footer">
+        GaryBot Auto Research · current implementation page for flow, models, and prompt design
+      </div>
+    </div>
+
+    <script>
+      const tabButtons = document.querySelectorAll("[data-tab]");
+      const tabPanes = document.querySelectorAll("[data-pane]");
+
+      tabButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = button.dataset.tab;
+          tabButtons.forEach((item) => {
+            item.setAttribute(
+              "aria-selected",
+              String(item.dataset.tab === target),
+            );
+          });
+          tabPanes.forEach((pane) => {
+            pane.classList.toggle("active", pane.dataset.pane === target);
+          });
+        });
+      });
+    </script>
   </body>
 </html>
