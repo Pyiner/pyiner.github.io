@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>Robin 知更 隐私政策</title>
+    <style>
+      :root { color-scheme: light; --paper: #f8f4e9; --ink: #1d1b18; --muted: #6e695f; --rule: #d8d1c3; --accent: #5C43E8; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      main { width: min(680px, calc(100% - 40px)); margin: 0 auto; padding: 72px 0; }
+      .kicker { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: .18em; }
+      h1 { margin: 10px 0 24px; font: 700 clamp(40px, 9vw, 64px)/1.05 Georgia, serif; }
+      h2 { margin: 36px 0 8px; font: 700 25px/1.25 Georgia, serif; }
+      p { margin: 8px 0; }
+      ul { margin: 8px 0; padding-left: 22px; }
+      li { margin: 4px 0; }
+      code { background: #efe9dc; border-radius: 4px; padding: 1px 5px; font-size: 14px; }
+      a { color: var(--accent); text-underline-offset: 3px; }
+      footer { margin-top: 52px; padding-top: 20px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="kicker">ROBIN 知更 · PRIVACY</div>
+      <h1>隐私政策</h1>
+      <p>Robin 知更把你飞书里的日程、任务、待审批、会话、云文档和邮件汇总到一屏。
+      它<strong>没有服务器</strong>：开发者不运营任何后端，你的数据从飞书直接到你的手机，
+      不经过第三方。App 不含广告、不含分析统计、不做跨 App 追踪。</p>
+
+      <h2>不向开发者注册账户</h2>
+      <p>Robin 不预置任何应用凭证。首次使用时，你在飞书里绑定或创建<strong>属于你自己的</strong>
+      个人机器人，凭证只写入本机钥匙串（Keychain）。开发者无法获取、也无法代你访问。</p>
+
+      <h2>App 访问哪些数据</h2>
+      <p>全部为飞书官方授权的<strong>只读</strong>权限，由你在飞书授权页逐项确认：</p>
+      <ul>
+        <li>日历与日程事件</li>
+        <li>任务与任务清单</li>
+        <li>审批实例与待办审批</li>
+        <li>会话列表（不读取聊天消息内容）</li>
+        <li>云文档元信息（标题、时间；不读取文档正文）</li>
+        <li>邮件（文件夹、主题、地址与正文，用于生成邮件卡片）</li>
+        <li>OKR</li>
+        <li>你自己的基础用户信息</li>
+      </ul>
+      <p>Robin 不请求任何写入权限，无法在你的飞书里创建、修改或删除任何内容。</p>
+
+      <h2>数据存放在哪里</h2>
+      <ul>
+        <li>凭证与令牌：仅本机钥匙串</li>
+        <li>卡片内容缓存与页面配置：仅本机沙盒（含小组件共享容器）</li>
+        <li>不上传、不备份到开发者处，不出售，不共享给任何第三方</li>
+        <li>卸载 App 后由系统一并删除</li>
+      </ul>
+
+      <h2>网络连接</h2>
+      <p>App 只与飞书开放平台通信（<code>open.feishu.cn</code> 等飞书域名）。
+      除此之外不连接任何服务器。</p>
+
+      <h2>诊断日志</h2>
+      <p>设置页内提供本地诊断日志，便于你排查问题。日志<strong>脱敏后</strong>记录，
+      不含令牌、聊天内容、文档正文、邮件正文，也不含用户或资源 ID；
+      网络地址以模板形式记录。日志只存在本机，是否导出完全由你决定。</p>
+
+      <h2>演示模式</h2>
+      <p>登录页的「体验演示模式」使用 App 内置的虚构样例数据，
+      <strong>全程不联网、不读取你的任何真实数据</strong>，退出时相关数据整体清除。</p>
+
+      <h2>儿童隐私</h2>
+      <p>App 不会有意收集任何年龄用户的个人信息。</p>
+
+      <h2>政策更新与联系</h2>
+      <p>如本政策发生变化，本页面会更新说明和日期。如有疑问，请通过
+      <a href="https://github.com/Pyiner">GitHub 开发者主页</a> 联系。</p>
+      <p><a href="../support/">前往支持页</a></p>
+
+      <footer>生效及最后更新：2026 年 8 月 4 日</footer>
+    </main>
+  </body>
+</html>
